@@ -1,0 +1,24 @@
+{% extends "aiapp/emails/base_email.html" %}
+{% block content %}
+<h2>Welcome to AutoWorld, {{ user.first_name|default:user.username }}! 🎉</h2>
+<p>We're thrilled to have you on board. AutoWorld is Kenya's leading automotive marketplace — connecting you with vehicles, spare parts, and certified mechanics.</p>
+
+<div class="info-box" style="text-align:center; padding:24px;">
+  <p style="font-size:32px; margin:0;">🚗</p>
+  <p style="font-weight:700; color:#1e1153; font-size:18px; margin:8px 0;">Your account is ready!</p>
+  <p style="color:#888; margin:0;">Username: <strong>{{ user.username }}</strong></p>
+</div>
+
+<p>Here's what you can do on AutoWorld:</p>
+<p>🚗 <strong>Browse Vehicles</strong> — Find your perfect car from our catalogue<br>
+🔩 <strong>Shop Spare Parts</strong> — Genuine parts for all vehicle makes<br>
+🧑‍🔧 <strong>Book a Mechanic</strong> — Certified professionals near you<br>
+🔍 <strong>AI Vehicle Diagnosis</strong> — Upload a photo, get instant analysis</p>
+
+<div style="text-align:center; margin:24px 0;">
+  <a href="{{ site_url }}" class="btn">Get Started →</a>
+</div>
+
+<hr class="divider">
+<p style="font-size:13px; color:#888;">If you didn't create this account, please <a href="mailto:{{ support_email }}" style="color:#1e1153;">contact us</a> immediately.</p>
+{% endblock %}

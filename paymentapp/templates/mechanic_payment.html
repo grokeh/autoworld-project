@@ -1,0 +1,375 @@
+{% extends "base.html" %}
+{% block title %}Booking Payment - AutoWorld{% endblock %}
+
+{% block content %}
+<style>
+  .payment-card {
+    border-radius: 16px;
+    border: none;
+    box-shadow: 0 8px 32px rgba(30, 17, 83, 0.12);
+    overflow: hidden;
+  }
+  .payment-header {
+    background: linear-gradient(135deg, #1e1153 0%, #2d1b8e 100%);
+    color: white;
+    padding: 2rem;
+  }
+  .booking-detail {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 0.95rem;
+  }
+  .booking-detail:last-child { border-bottom: none; }
+  .booking-detail .label { color: #888; min-width: 110px; }
+  .booking-detail .value { font-weight: 600; color: #1e1153; }
+  .amount-badge {
+    background: linear-gradient(135deg, #11ba1f, #0d9e1a);
+    color: white;
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    text-align: center;
+  }
+  .phone-input-group .form-control {
+    border-radius: 10px 0 0 10px;
+    border: 2px solid #e0e0e0;
+    font-size: 1.05rem;
+    padding: 0.75rem 1rem;
+    transition: border-color 0.2s;
+  }
+  .phone-input-group .form-control:focus {
+    border-color: #1e1153;
+    box-shadow: none;
+  }
+  .phone-input-group .input-group-text {
+    background: #1e1153;
+    color: white;
+    border: 2px solid #1e1153;
+    border-radius: 0 10px 10px 0;
+    font-weight: 600;
+  }
+  .btn-pay {
+    background: linear-gradient(135deg, #11ba1f, #0d9e1a);
+    border: none;
+    border-radius: 12px;
+    padding: 0.85rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: all 0.2s;
+  }
+  .btn-pay:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(17, 186, 31, 0.35);
+    background: linear-gradient(135deg, #0d9e1a, #0a8516);
+  }
+  .btn-pay:disabled { opacity: 0.65; cursor: not-allowed; }
+  .status-box {
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    display: none;
+    align-items: center;
+    gap: 0.75rem;
+    font-weight: 500;
+  }
+  .status-box.show { display: flex; }
+  .status-box.waiting  { background: #fff8e1; color: #856404; border: 1px solid #ffc107; }
+  .status-box.success  { background: #d1fae5; color: #065f46; border: 1px solid #10b981; }
+  .status-box.error    { background: #fee2e2; color: #991b1b; border: 1px solid #ef4444; }
+  .spinner-sm {
+    width: 1.2rem; height: 1.2rem;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.75s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .step-indicator {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    position: relative;
+  }
+  .step-indicator::before {
+    content: '';
+    position: absolute;
+    top: 16px;
+    left: 10%;
+    right: 10%;
+    height: 2px;
+    background: #e0e0e0;
+    z-index: 0;
+  }
+  .step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    z-index: 1;
+    flex: 1;
+  }
+  .step-circle {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.85rem;
+    background: #e0e0e0; color: #888;
+    transition: all 0.3s;
+  }
+  .step.active .step-circle  { background: #1e1153; color: white; }
+  .step.done .step-circle    { background: #11ba1f; color: white; }
+  .step-label { font-size: 0.75rem; color: #888; text-align: center; }
+  .step.active .step-label   { color: #1e1153; font-weight: 600; }
+  .step.done .step-label     { color: #11ba1f; font-weight: 600; }
+  .mpesa-logo {
+    background: #00a651;
+    color: white;
+    border-radius: 8px;
+    padding: 0.25rem 0.6rem;
+    font-weight: 800;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+  }
+</style>
+
+<div class="container my-5">
+  <div class="row justify-content-center">
+    <div class="col-md-7 col-lg-6">
+
+      <!-- Step Indicator -->
+      <div class="step-indicator mb-4" id="stepIndicator">
+        <div class="step done" id="step1">
+          <div class="step-circle">✓</div>
+          <span class="step-label">Booking</span>
+        </div>
+        <div class="step active" id="step2">
+          <div class="step-circle">2</div>
+          <span class="step-label">Payment</span>
+        </div>
+        <div class="step" id="step3">
+          <div class="step-circle">3</div>
+          <span class="step-label">Confirmed</span>
+        </div>
+      </div>
+
+      <div class="payment-card card">
+
+        <!-- Header -->
+        <div class="payment-header">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <h4 class="mb-1 fw-bold">Booking Deposit</h4>
+              <p class="mb-0 opacity-75 small">Complete payment to confirm your booking</p>
+            </div>
+            <span class="mpesa-logo">M-PESA</span>
+          </div>
+        </div>
+
+        <div class="card-body p-4">
+
+          <!-- Booking Summary -->
+          <h6 class="text-uppercase text-muted fw-semibold mb-3" style="font-size:0.75rem; letter-spacing:1px;">
+            Booking Summary
+          </h6>
+          <div class="mb-3">
+            <div class="booking-detail">
+              <span class="label">🔧 Mechanic</span>
+              <span class="value">{{ booking.mechanic.name }}</span>
+            </div>
+            <div class="booking-detail">
+              <span class="label">📅 Date</span>
+              <span class="value">{{ booking.booking_date }}</span>
+            </div>
+            <div class="booking-detail">
+              <span class="label">🕐 Time</span>
+              <span class="value">{{ booking.time }}</span>
+            </div>
+            <div class="booking-detail">
+              <span class="label">🛠️ Service</span>
+              <span class="value">{{ booking.service_type }}</span>
+            </div>
+            <div class="booking-detail">
+              <span class="label">📋 Details</span>
+              <span class="value">{{ booking.details|default:"—" }}</span>
+            </div>
+          </div>
+
+          <!-- Amount -->
+          <div class="amount-badge mb-4">
+            <div class="small opacity-75 mb-1">Deposit Amount</div>
+            <div style="font-size: 2rem; font-weight: 800; letter-spacing: -1px;">
+              KES {{ deposit_amount }}
+            </div>
+            <div class="small opacity-75 mt-1">Secure M-Pesa payment</div>
+          </div>
+
+          <!-- Phone Input -->
+          <label class="form-label fw-semibold mb-2">
+            📱 M-Pesa Phone Number
+          </label>
+          <div class="input-group phone-input-group mb-1">
+            <input
+              type="tel"
+              id="phoneInput"
+              class="form-control"
+              placeholder="07XX XXX XXX"
+              maxlength="12"
+              autocomplete="tel"
+            >
+            <span class="input-group-text">+254</span>
+          </div>
+          <p class="text-muted small mb-4">
+            Enter the M-Pesa number to receive the payment prompt.
+          </p>
+
+          <!-- Status Box -->
+          <div class="status-box waiting mb-3" id="statusBox">
+            <div class="spinner-sm" id="statusSpinner"></div>
+            <span id="statusText">Sending payment request...</span>
+          </div>
+
+          <!-- Pay Button -->
+          <button class="btn btn-pay btn-success w-100 text-white" id="payBtn" onclick="initiatePayment()">
+            <i class="fas fa-lock me-2"></i> Pay KES {{ deposit_amount }} via M-Pesa
+          </button>
+
+          <p class="text-center text-muted small mt-3 mb-0">
+            <i class="fas fa-shield-alt me-1"></i>
+            You'll receive a PIN prompt on your phone. Enter your M-Pesa PIN to complete.
+          </p>
+
+        </div>
+      </div>
+
+      <!-- Help text -->
+      <div class="text-center mt-3">
+        <a href="{% url 'mechanics_list' %}" class="text-muted small">
+          ← Back to mechanics
+        </a>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  const BOOKING_ID = "{{ booking.id }}";
+  const DEPOSIT = {{ deposit_amount }};
+
+  function normalizePhone(raw) {
+    raw = raw.replace(/\s+/g, '').replace(/-/g, '');
+    if (raw.startsWith('0'))   return '254' + raw.slice(1);
+    if (raw.startsWith('+'))   return raw.slice(1);
+    if (raw.startsWith('254')) return raw;
+    if (raw.startsWith('7') || raw.startsWith('1')) return '254' + raw;
+    return raw;
+  }
+
+  function setStatus(type, message, showSpinner = false) {
+    const box = document.getElementById('statusBox');
+    const text = document.getElementById('statusText');
+    const spinner = document.getElementById('statusSpinner');
+
+    box.className = 'status-box show ' + type;
+    text.textContent = message;
+    spinner.style.display = showSpinner ? 'block' : 'none';
+  }
+
+  function setStep(stepNum) {
+    for (let i = 1; i <= 3; i++) {
+      const el = document.getElementById('step' + i);
+      el.className = 'step';
+      if (i < stepNum)       el.classList.add('done');
+      else if (i === stepNum) el.classList.add('active');
+      if (i < stepNum) el.querySelector('.step-circle').textContent = '✓';
+    }
+  }
+
+  async function initiatePayment() {
+    const raw = document.getElementById('phoneInput').value.trim();
+    if (!raw) {
+      setStatus('error', '⚠️ Please enter your M-Pesa phone number.');
+      return;
+    }
+
+    const phone = normalizePhone(raw);
+    if (!/^2547\d{8}$|^2541\d{8}$/.test(phone)) {
+      setStatus('error', '⚠️ Invalid phone number. Use format 07XX XXX XXX.');
+      return;
+    }
+
+    const btn = document.getElementById('payBtn');
+    btn.disabled = true;
+    setStatus('waiting', 'Sending STK push to your phone...', true);
+    setStep(2);
+
+    try {
+      const resp = await fetch("{% url 'stk_push_payment' %}", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+          phone: phone,
+          booking_id: BOOKING_ID,
+          amount: DEPOSIT
+        })
+      });
+
+      const data = await resp.json();
+
+      if (data.success) {
+        setStatus('waiting',
+          '📲 Check your phone! Enter your M-Pesa PIN to complete payment.',
+          true
+        );
+        // Poll for confirmation every 5 seconds for up to 2 minutes
+        pollPaymentStatus();
+      } else {
+        setStatus('error', '❌ ' + (data.error || 'Failed to send payment request. Try again.'));
+        btn.disabled = false;
+      }
+    } catch (err) {
+      setStatus('error', '❌ Network error. Please check your connection and try again.');
+      btn.disabled = false;
+    }
+  }
+
+  let pollCount = 0;
+  function pollPaymentStatus() {
+    pollCount = 0;
+    const interval = setInterval(async () => {
+      pollCount++;
+      try {
+        const resp = await fetch(`/paymentapp/booking-payment-status/${BOOKING_ID}/`);
+        const data = await resp.json();
+
+        if (data.is_paid) {
+          clearInterval(interval);
+          setStatus('success', '✅ Payment confirmed! Your booking is approved.');
+          setStep(3);
+          document.getElementById('payBtn').textContent = '✅ Payment Complete';
+
+          // Redirect to dashboard after 2 seconds
+          setTimeout(() => {
+            window.location.href = "{% url 'customer_dashboard' %}";
+          }, 2000);
+        }
+      } catch (e) { /* ignore poll errors */ }
+
+      if (pollCount >= 24) { // 2 minutes
+        clearInterval(interval);
+        setStatus('error',
+          '⏱️ Payment not confirmed yet. If you paid, it will be confirmed shortly. ' +
+          'Otherwise, your booking may be cancelled.'
+        );
+        document.getElementById('payBtn').disabled = false;
+      }
+    }, 5000);
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+{% block title %}Inventory Optimization - AutoWorld{% endblock %}
+
+{% block content %}
+<style>
+  .inv-header { background:linear-gradient(135deg,#11ba1f,#0d9e1a); border-radius:16px; color:white; padding:2rem; margin-bottom:2rem; }
+  .inv-card { border:none; border-radius:16px; box-shadow:0 4px 20px rgba(30,17,83,.09); padding:1.5rem; height:100%; }
+  .inv-card h6 { font-weight:700; color:#1e1153; margin-bottom:1rem; }
+  .health-circle { width:120px; height:120px; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; margin:0 auto 1rem; font-weight:800; }
+  .grade-A { background:linear-gradient(135deg,#11ba1f,#0d9e1a); color:white; }
+  .grade-B { background:linear-gradient(135deg,#fd7e14,#e65c00); color:white; }
+  .grade-C { background:linear-gradient(135deg,#ffc107,#e0a800); color:white; }
+  .grade-D { background:linear-gradient(135deg,#dc3545,#b52a36); color:white; }
+  .abc-A { background:#fce4ec; color:#c62828; border-radius:8px; padding:.2rem .6rem; font-size:.75rem; font-weight:700; }
+  .abc-B { background:#fff3e0; color:#e65c00; border-radius:8px; padding:.2rem .6rem; font-size:.75rem; font-weight:700; }
+  .abc-C { background:#f5f5f5; color:#616161; border-radius:8px; padding:.2rem .6rem; font-size:.75rem; font-weight:700; }
+  .status-out_of_stock { background:#fce4ec; color:#c62828; border-radius:8px; padding:.2rem .6rem; font-size:.75rem; font-weight:700; }
+  .status-low_stock    { background:#fff8e1; color:#856404; border-radius:8px; padding:.2rem .6rem; font-size:.75rem; font-weight:700; }
+  .status-medium_stock { background:#fff3e0; color:#e65c00; border-radius:8px; padding:.2rem .6rem; font-size:.75rem; font-weight:700; }
+  .status-in_stock     { background:#e8f5e9; color:#2e7d32; border-radius:8px; padding:.2rem .6rem; font-size:.75rem; font-weight:700; }
+  .alert-critical { border-left:4px solid #dc3545; background:#fce4ec; border-radius:0 12px 12px 0; padding:.75rem 1rem; margin-bottom:.5rem; }
+  .alert-warning  { border-left:4px solid #ffc107; background:#fff8e1; border-radius:0 12px 12px 0; padding:.75rem 1rem; margin-bottom:.5rem; }
+  .stock-input { width:70px; border:2px solid #e0e0e0; border-radius:8px; padding:.3rem .5rem; font-size:.85rem; text-align:center; }
+  .stock-input:focus { border-color:#11ba1f; outline:none; }
+  .save-btn { background:#11ba1f; color:white; border:none; border-radius:8px; padding:.3rem .75rem; font-size:.78rem; font-weight:600; cursor:pointer; }
+  .save-btn:hover { background:#0d9e1a; }
+</style>
+
+<!-- Header -->
+<div class="inv-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+  <div>
+    <h3 class="fw-bold mb-1">📦 Inventory Optimization</h3>
+    <p class="mb-0 opacity-75">ABC analysis, reorder alerts, and stock management</p>
+  </div>
+  <div class="d-flex gap-2">
+    <button class="btn btn-outline-light rounded-pill px-4 fw-semibold" onclick="loadInventory()">↻ Refresh</button>
+    <a href="{% url 'dashboard' %}" class="btn btn-light rounded-pill px-4 fw-semibold">← Dashboard</a>
+  </div>
+</div>
+
+<!-- Loading -->
+<div id="inv-loading" class="text-center py-5 text-muted">
+  <div style="font-size:3rem;">📦</div>
+  <p class="mt-2">Analysing inventory...</p>
+</div>
+
+<div id="inv-content" style="display:none;">
+
+  <!-- Row 1: Health score + Stats + Alerts -->
+  <div class="row g-4 mb-4">
+
+    <!-- Health Score -->
+    <div class="col-md-3">
+      <div class="inv-card card text-center">
+        <h6>🏥 Inventory Health</h6>
+        <div class="health-circle grade-A" id="health-circle">
+          <div style="font-size:2rem;" id="health-score">—</div>
+          <div style="font-size:.75rem; opacity:.85;">Grade <span id="health-grade">—</span></div>
+        </div>
+        <p class="text-muted small mb-0" id="health-summary">Loading...</p>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="col-md-3">
+      <div class="inv-card card">
+        <h6>📊 Stock Overview</h6>
+        <div class="d-flex justify-content-between mb-2">
+          <span class="text-muted small">Total Parts</span>
+          <span class="fw-bold" id="stat-total">—</span>
+        </div>
+        <div class="d-flex justify-content-between mb-2">
+          <span class="text-muted small">✅ Healthy</span>
+          <span class="fw-bold text-success" id="stat-healthy">—</span>
+        </div>
+        <div class="d-flex justify-content-between mb-2">
+          <span class="text-muted small">⚠️ Low Stock</span>
+          <span class="fw-bold text-warning" id="stat-low">—</span>
+        </div>
+        <div class="d-flex justify-content-between">
+          <span class="text-muted small">🚨 Out of Stock</span>
+          <span class="fw-bold text-danger" id="stat-out">—</span>
+        </div>
+        <hr class="my-3">
+        <div class="d-flex justify-content-between">
+          <span class="text-muted small">ABC: A / B / C</span>
+          <span class="fw-bold small" id="stat-abc">— / — / —</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alerts -->
+    <div class="col-md-6">
+      <div class="inv-card card">
+        <h6>🚨 Stock Alerts</h6>
+        <div id="inv-alerts" style="max-height:200px; overflow-y:auto;">
+          <p class="text-muted small">Loading alerts...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reorder Recommendations -->
+  <div class="row g-4 mb-4">
+    <div class="col-12">
+      <div class="inv-card card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h6 class="mb-0">🔄 Reorder Recommendations</h6>
+          <span class="text-muted small">EOQ-optimised quantities</span>
+        </div>
+        <div class="table-responsive">
+          <table class="table mb-0">
+            <thead style="background:#f4f3ff;">
+              <tr>
+                <th style="color:#1e1153;">Part</th>
+                <th style="color:#1e1153;">Current Stock</th>
+                <th style="color:#1e1153;">Reorder Point</th>
+                <th style="color:#1e1153;">EOQ</th>
+                <th style="color:#1e1153;">Suggested Order</th>
+                <th style="color:#1e1153;">Est. Cost (KES)</th>
+                <th style="color:#1e1153;">Urgency</th>
+              </tr>
+            </thead>
+            <tbody id="reorder-body">
+              <tr><td colspan="7" class="text-center text-muted py-3">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABC Analysis Table -->
+  <div class="row g-4 mb-4">
+    <div class="col-12">
+      <div class="inv-card card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h6 class="mb-0">📊 ABC Analysis — All Parts</h6>
+          <div class="d-flex gap-2">
+            <span class="abc-A">A: High Value</span>
+            <span class="abc-B">B: Medium</span>
+            <span class="abc-C">C: Low Value</span>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="table mb-0">
+            <thead style="background:#f4f3ff;">
+              <tr>
+                <th style="color:#1e1153;">Part</th>
+                <th style="color:#1e1153;">Compatible</th>
+                <th style="color:#1e1153;">Price</th>
+                <th style="color:#1e1153;">Stock</th>
+                <th style="color:#1e1153;">Update Stock</th>
+                <th style="color:#1e1153;">Status</th>
+                <th style="color:#1e1153;">ABC</th>
+                <th style="color:#1e1153;">Annual Demand</th>
+              </tr>
+            </thead>
+            <tbody id="abc-body">
+              <tr><td colspan="8" class="text-center text-muted py-3">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const CSRF = "{{ csrf_token }}";
+
+async function loadInventory() {
+  document.getElementById('inv-loading').style.display = 'block';
+  document.getElementById('inv-content').style.display = 'none';
+  try {
+    const r = await fetch("{% url 'inventory_api' %}");
+    const d = await r.json();
+    renderHealth(d.health);
+    renderAlerts(d.health.alerts);
+    renderReorder(d.reorder_recommendations);
+    renderABC(d.abc_analysis, d.abc_summary);
+    document.getElementById('inv-loading').style.display = 'none';
+    document.getElementById('inv-content').style.display = 'block';
+  } catch(e) {
+    document.getElementById('inv-loading').innerHTML =
+      '<div style="font-size:2rem;">⚠️</div><p class="text-danger mt-2">Failed to load inventory data.</p>';
+  }
+}
+
+function renderHealth(h) {
+  document.getElementById('health-score').textContent = h.score;
+  document.getElementById('health-grade').textContent = h.grade;
+  document.getElementById('health-summary').textContent = h.summary;
+  const circle = document.getElementById('health-circle');
+  circle.className = 'health-circle grade-' + h.grade;
+  document.getElementById('stat-total').textContent = h.stats.total ?? '—';
+  document.getElementById('stat-healthy').textContent = h.stats.healthy ?? '—';
+  document.getElementById('stat-low').textContent = h.stats.low_stock ?? '—';
+  document.getElementById('stat-out').textContent = h.stats.out_of_stock ?? '—';
+}
+
+function renderAlerts(alerts) {
+  const el = document.getElementById('inv-alerts');
+  if (!alerts || !alerts.length) {
+    el.innerHTML = '<p class="text-success small">✅ No stock alerts. Inventory is healthy!</p>';
+    return;
+  }
+  el.innerHTML = alerts.map(a =>
+    `<div class="alert-${a.severity}">
+      <div class="fw-semibold small">${a.message}</div>
+      ${a.reorder_qty ? `<div class="text-muted" style="font-size:.75rem;">Suggested reorder: ${a.reorder_qty} units</div>` : ''}
+    </div>`
+  ).join('');
+}
+
+function renderReorder(recs) {
+  const tbody = document.getElementById('reorder-body');
+  if (!recs || !recs.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-success py-3">✅ No reorders needed right now.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = recs.map(r => `
+    <tr>
+      <td class="fw-semibold">${r.name}</td>
+      <td class="text-muted small">${r.compatible}</td>
+      <td>${r.current_stock}</td>
+      <td>${r.reorder_point}</td>
+      <td class="fw-bold text-primary">${r.eoq}</td>
+      <td class="fw-bold">${r.suggested_order_qty}</td>
+      <td>KES ${r.estimated_cost.toLocaleString()}</td>
+      <td><span class="${r.urgency === 'critical' ? 'status-out_of_stock' : 'status-low_stock'}">${r.urgency}</span></td>
+    </tr>`
+  ).join('');
+}
+
+function renderABC(parts, summary) {
+  if (summary) {
+    document.getElementById('stat-abc').textContent =
+      `${summary.A} / ${summary.B} / ${summary.C}`;
+  }
+  const tbody = document.getElementById('abc-body');
+  if (!parts || !parts.length) {
+    tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-3">No parts data.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = parts.map(p => `
+    <tr>
+      <td class="fw-semibold">${p.name}</td>
+      <td class="text-muted small">${p.compatible}</td>
+      <td>KES ${p.price.toLocaleString()}</td>
+      <td>${p.stock}</td>
+      <td>
+        <div class="d-flex align-items-center gap-1">
+          <input type="number" class="stock-input" id="stock-${p.id}" value="${p.stock}" min="0">
+          <button class="save-btn" onclick="saveStock(${p.id})">Save</button>
+        </div>
+      </td>
+      <td><span class="status-${p.status}">${p.status.replace('_', ' ')}</span></td>
+      <td><span class="abc-${p.abc_class}">${p.abc_class}</span></td>
+      <td>${p.annual_demand}</td>
+    </tr>`
+  ).join('');
+}
+
+async function saveStock(partId) {
+  const qty = document.getElementById('stock-' + partId).value;
+  try {
+    const r = await fetch("{% url 'update_stock' %}", {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify({ part_id: partId, quantity: parseInt(qty) })
+    });
+    const d = await r.json();
+    if (d.success) {
+      loadInventory(); // Refresh
+    } else {
+      alert('Error: ' + d.error);
+    }
+  } catch(e) {
+    alert('Failed to update stock.');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadInventory);
+</script>
+{% endblock %}

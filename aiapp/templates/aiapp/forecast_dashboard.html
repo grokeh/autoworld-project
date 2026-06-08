@@ -1,0 +1,308 @@
+{% extends "base.html" %}
+{% block title %}AI Demand Forecasting - AutoWorld{% endblock %}
+
+{% block content %}
+<style>
+  .fc-header { background:linear-gradient(135deg,#1e1153,#2d1b8e); border-radius:16px; color:white; padding:2rem; margin-bottom:2rem; }
+  .fc-card { border:none; border-radius:16px; box-shadow:0 4px 20px rgba(30,17,83,.09); padding:1.5rem; height:100%; }
+  .fc-card h6 { font-weight:700; color:#1e1153; margin-bottom:1rem; }
+  .trend-high   { color:#11ba1f; font-weight:700; }
+  .trend-medium { color:#fd7e14; font-weight:700; }
+  .trend-low    { color:#6c757d; font-weight:600; }
+  .trend-up     { color:#11ba1f; }
+  .trend-down   { color:#dc3545; }
+  .trend-stable { color:#6c757d; }
+  .forecast-num { font-size:2.5rem; font-weight:800; color:#1e1153; }
+  .bar-wrap { background:#f4f3ff; border-radius:8px; height:10px; overflow:hidden; margin-top:.3rem; }
+  .bar-fill { height:100%; border-radius:8px; background:linear-gradient(90deg,#1e1153,#11ba1f); transition:width .8s ease; }
+  .load-high   { background:#dc3545; color:white; border-radius:8px; padding:.2rem .6rem; font-size:.75rem; font-weight:700; }
+  .load-medium { background:#fd7e14; color:white; border-radius:8px; padding:.2rem .6rem; font-size:.75rem; font-weight:700; }
+  .load-low    { background:#11ba1f; color:white; border-radius:8px; padding:.2rem .6rem; font-size:.75rem; font-weight:700; }
+  .skeleton { background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%); background-size:200% 100%; animation:shimmer 1.5s infinite; border-radius:8px; height:20px; }
+  @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+</style>
+
+<!-- Header -->
+<div class="fc-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+  <div>
+    <h3 class="fw-bold mb-1">🤖 AI Demand Forecasting</h3>
+    <p class="mb-0 opacity-75">Machine learning predictions powered by your booking & order history</p>
+  </div>
+  <div class="d-flex gap-2">
+    <button class="btn btn-outline-light rounded-pill px-4 fw-semibold" onclick="loadForecast()">
+      ↻ Refresh
+    </button>
+    <a href="{% url 'dashboard' %}" class="btn btn-light rounded-pill px-4 fw-semibold">
+      ← Dashboard
+    </a>
+  </div>
+</div>
+
+<!-- Model freshness badge -->
+<div class="mb-3">
+  {% if model_meta.weekly_bookings.trained_at %}
+    <span class="badge rounded-pill px-3 py-2" style="background:#f4f3ff; color:#1e1153; font-size:.82rem; border:1px solid #ddd;">
+      📊 Model trained {{ model_meta.weekly_bookings.trained_at|timesince }} ago
+      &middot; {{ model_meta.weekly_bookings.samples|default:"?" }} samples
+    </span>
+  {% else %}
+    <span class="badge rounded-pill px-3 py-2" style="background:#fff3e0; color:#856404; font-size:.82rem; border:1px solid #ffc107;">
+      ⚠️ Models not yet trained — run <code>python manage.py train_forecasting_models</code>
+    </span>
+  {% endif %}
+</div>
+
+<!-- Loading state -->
+<div id="fc-loading" class="text-center py-5 text-muted">
+  <div style="font-size:3rem;">🤖</div>
+  <p class="mt-2">Running ML models on your data...</p>
+</div>
+
+<!-- Content (hidden until loaded) -->
+<div id="fc-content" style="display:none;">
+
+  <!-- Row 1: Weekly forecast + Day pattern -->
+  <div class="row g-4 mb-4">
+
+    <!-- Weekly Booking Forecast -->
+    <div class="col-md-4">
+      <div class="fc-card card">
+        <h6>📅 Next Week Booking Forecast</h6>
+        <div class="forecast-num" id="fc-weekly-num">—</div>
+        <div class="text-muted small mb-2">predicted bookings</div>
+        <div id="fc-weekly-trend" class="mb-2"></div>
+        <div class="text-muted small" id="fc-weekly-msg"></div>
+        <div class="mt-3 pt-3 border-top">
+          <div class="text-muted small">Historical avg: <strong id="fc-weekly-avg">—</strong>/week</div>
+          <div class="text-muted small">Model confidence: <strong id="fc-weekly-conf">—</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Day of Week Pattern -->
+    <div class="col-md-8">
+      <div class="fc-card card">
+        <h6>📊 Booking Pattern by Day of Week</h6>
+        <div id="fc-day-pattern">
+          <div class="skeleton mb-2"></div>
+          <div class="skeleton mb-2"></div>
+          <div class="skeleton"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 2: Mechanic demand + Service demand -->
+  <div class="row g-4 mb-4">
+
+    <!-- Mechanic Demand -->
+    <div class="col-md-6">
+      <div class="fc-card card">
+        <h6>🧑‍🔧 Mechanic Demand Forecast (Next 7 Days)</h6>
+        <div id="fc-mechanic-demand">
+          <div class="skeleton mb-2"></div>
+          <div class="skeleton mb-2"></div>
+          <div class="skeleton"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Service Type Demand -->
+    <div class="col-md-6">
+      <div class="fc-card card">
+        <h6>🛠️ Service Type Demand</h6>
+        <div id="fc-service-demand">
+          <div class="skeleton mb-2"></div>
+          <div class="skeleton mb-2"></div>
+          <div class="skeleton"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 3: Spare part demand -->
+  <div class="row g-4 mb-4">
+    <div class="col-12">
+      <div class="fc-card card">
+        <h6>🔩 Spare Parts Demand Forecast</h6>
+        <div class="table-responsive">
+          <table class="table mb-0" id="fc-parts-table">
+            <thead style="background:#f4f3ff;">
+              <tr>
+                <th style="color:#1e1153;">Part Name</th>
+                <th style="color:#1e1153;">Compatible Vehicle</th>
+                <th style="color:#1e1153;">Predicted Orders</th>
+                <th style="color:#1e1153;">Demand Level</th>
+              </tr>
+            </thead>
+            <tbody id="fc-parts-body">
+              <tr><td colspan="4" class="text-center text-muted py-3">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart -->
+  <div class="row g-4 mb-4">
+    <div class="col-12">
+      <div class="fc-card card">
+        <h6>📈 Day of Week Booking Distribution</h6>
+        <canvas id="fc-day-chart" height="80"></canvas>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let dayChart = null;
+
+async function loadForecast() {
+  document.getElementById('fc-loading').style.display = 'block';
+  document.getElementById('fc-content').style.display = 'none';
+
+  try {
+    const r = await fetch("{% url 'forecast_api' %}");
+    const d = await r.json();
+
+    renderWeekly(d.weekly_bookings);
+    renderDayPattern(d.day_pattern);
+    renderMechanicDemand(d.mechanic_demand);
+    renderServiceDemand(d.service_demand);
+    renderPartsDemand(d.sparepart_demand);
+    renderDayChart(d.day_pattern);
+
+    document.getElementById('fc-loading').style.display = 'none';
+    document.getElementById('fc-content').style.display = 'block';
+  } catch(e) {
+    document.getElementById('fc-loading').innerHTML =
+      '<div style="font-size:2rem;">⚠️</div><p class="text-danger mt-2">Failed to load forecast data.</p>';
+  }
+}
+
+function renderWeekly(data) {
+  document.getElementById('fc-weekly-num').textContent = data.forecast ?? '—';
+  document.getElementById('fc-weekly-msg').textContent = data.message ?? '';
+  document.getElementById('fc-weekly-avg').textContent = data.historical_avg ?? '—';
+  document.getElementById('fc-weekly-conf').textContent =
+    data.confidence ? (data.confidence * 100).toFixed(0) + '%' : '—';
+
+  const trendEl = document.getElementById('fc-weekly-trend');
+  const icons = { up: '📈 Trending Up', down: '📉 Trending Down', stable: '➡️ Stable' };
+  const cls = { up: 'trend-up', down: 'trend-down', stable: 'trend-stable' };
+  trendEl.innerHTML = `<span class="${cls[data.trend] || ''}">${icons[data.trend] || ''}</span>`;
+}
+
+function renderDayPattern(days) {
+  if (!days || !days.length) {
+    document.getElementById('fc-day-pattern').innerHTML =
+      '<p class="text-muted small">No data yet.</p>';
+    return;
+  }
+  const max = Math.max(...days.map(d => d.count), 1);
+  let html = '';
+  days.forEach(d => {
+    const w = Math.round((d.count / max) * 100);
+    html += `<div class="d-flex align-items-center gap-2 mb-2">
+      <span style="min-width:36px; font-size:.82rem; font-weight:600; color:#555;">${d.day}</span>
+      <div class="bar-wrap flex-grow-1"><div class="bar-fill" style="width:${w}%"></div></div>
+      <span style="min-width:50px; font-size:.82rem; color:#888; text-align:right;">${d.count} (${d.pct}%)</span>
+    </div>`;
+  });
+  document.getElementById('fc-day-pattern').innerHTML = html;
+}
+
+function renderMechanicDemand(mechanics) {
+  if (!mechanics || !mechanics.length) {
+    document.getElementById('fc-mechanic-demand').innerHTML =
+      '<p class="text-muted small">No booking data available.</p>';
+    return;
+  }
+  const max = Math.max(...mechanics.map(m => m.predicted_bookings), 1);
+  let html = '';
+  mechanics.forEach(m => {
+    const w = Math.round((m.predicted_bookings / max) * 100);
+    html += `<div class="d-flex align-items-center gap-2 mb-2">
+      <span style="min-width:120px; font-size:.85rem; font-weight:600; color:#1e1153; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${m.mechanic}</span>
+      <div class="bar-wrap flex-grow-1"><div class="bar-fill" style="width:${w}%"></div></div>
+      <span class="load-${m.load}">${m.predicted_bookings}</span>
+    </div>`;
+  });
+  document.getElementById('fc-mechanic-demand').innerHTML = html;
+}
+
+function renderServiceDemand(services) {
+  if (!services || !services.length) {
+    document.getElementById('fc-service-demand').innerHTML =
+      '<p class="text-muted small">No service data available.</p>';
+    return;
+  }
+  let html = '';
+  services.forEach(s => {
+    html += `<div class="d-flex align-items-center justify-content-between mb-2">
+      <span style="font-size:.88rem; font-weight:600; color:#333;">${s.service}</span>
+      <div class="d-flex align-items-center gap-2">
+        <div class="bar-wrap" style="width:80px;"><div class="bar-fill" style="width:${s.demand_score}%"></div></div>
+        <span class="trend-${s.trend}" style="font-size:.82rem;">${s.demand_score}%</span>
+      </div>
+    </div>`;
+  });
+  document.getElementById('fc-service-demand').innerHTML = html;
+}
+
+function renderPartsDemand(parts) {
+  if (!parts || !parts.length) {
+    document.getElementById('fc-parts-body').innerHTML =
+      '<tr><td colspan="4" class="text-center text-muted py-3">No spare parts order data yet.</td></tr>';
+    return;
+  }
+  let html = '';
+  parts.forEach(p => {
+    const badge = p.trend === 'high'
+      ? '<span class="load-high">High</span>'
+      : p.trend === 'medium'
+      ? '<span class="load-medium">Medium</span>'
+      : '<span class="load-low">Low</span>';
+    html += `<tr>
+      <td class="fw-semibold">${p.part}</td>
+      <td class="text-muted small">${p.compatible}</td>
+      <td>${p.predicted_orders}</td>
+      <td>${badge}</td>
+    </tr>`;
+  });
+  document.getElementById('fc-parts-body').innerHTML = html;
+}
+
+function renderDayChart(days) {
+  if (!days || !days.length) return;
+  const ctx = document.getElementById('fc-day-chart').getContext('2d');
+  if (dayChart) dayChart.destroy();
+  dayChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: days.map(d => d.day),
+      datasets: [{
+        label: 'Bookings',
+        data: days.map(d => d.count),
+        backgroundColor: days.map((d, i) => i === 4 || i === 5 ? '#11ba1f' : '#1e1153'),
+        borderRadius: 8,
+        barThickness: 36,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, ticks: { stepSize: 1 } }
+      }
+    }
+  });
+}
+
+// Load on page open
+document.addEventListener('DOMContentLoaded', loadForecast);
+</script>
+{% endblock %}

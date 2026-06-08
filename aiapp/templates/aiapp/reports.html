@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Reports - AutoWorld{% endblock %}
+
+{% block content %}
+<style>
+  .rpt-header { background:linear-gradient(135deg,#1e1153,#2d1b8e); border-radius:16px; color:white; padding:2rem; margin-bottom:2rem; }
+  .rpt-card { border:none; border-radius:16px; box-shadow:0 4px 20px rgba(30,17,83,.09); padding:2rem; transition:transform .2s; }
+  .rpt-card:hover { transform:translateY(-4px); }
+  .rpt-icon { font-size:3rem; margin-bottom:1rem; }
+  .rpt-card h5 { font-weight:700; color:#1e1153; }
+  .days-select { border-radius:10px; border:2px solid #e0e0e0; padding:.4rem .75rem; font-size:.88rem; }
+  .days-select:focus { border-color:#1e1153; outline:none; }
+  .btn-download { background:linear-gradient(135deg,#1e1153,#2d1b8e); color:white; border:none; border-radius:12px; padding:.75rem 1.5rem; font-weight:600; transition:all .2s; width:100%; }
+  .btn-download:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(30,17,83,.3); color:white; }
+</style>
+
+<!-- Header -->
+<div class="rpt-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+  <div>
+    <h3 class="fw-bold mb-1">📄 Reports</h3>
+    <p class="mb-0 opacity-75">Download PDF reports for bookings, revenue, inventory, and job cards</p>
+  </div>
+  <a href="{% url 'dashboard' %}" class="btn btn-outline-light rounded-pill px-4 fw-semibold">
+    ← Dashboard
+  </a>
+</div>
+
+<div class="row g-4">
+
+  <!-- Bookings Report -->
+  <div class="col-md-6 col-lg-3">
+    <div class="rpt-card card text-center">
+      <div class="rpt-icon">📅</div>
+      <h5>Bookings Report</h5>
+      <p class="text-muted small mb-3">All bookings with status, payment, and mechanic details.</p>
+      <select class="days-select w-100 mb-3" id="days-bookings">
+        <option value="7">Last 7 days</option>
+        <option value="30" selected>Last 30 days</option>
+        <option value="90">Last 90 days</option>
+        <option value="365">Last year</option>
+      </select>
+      <a href="#" class="btn-download btn"
+         onclick="downloadReport('bookings', 'days-bookings'); return false;">
+        ⬇ Download PDF
+      </a>
+    </div>
+  </div>
+
+  <!-- Revenue Report -->
+  <div class="col-md-6 col-lg-3">
+    <div class="rpt-card card text-center">
+      <div class="rpt-icon">💰</div>
+      <h5>Revenue Report</h5>
+      <p class="text-muted small mb-3">Paid orders and booking deposits with totals.</p>
+      <select class="days-select w-100 mb-3" id="days-revenue">
+        <option value="7">Last 7 days</option>
+        <option value="30" selected>Last 30 days</option>
+        <option value="90">Last 90 days</option>
+        <option value="365">Last year</option>
+      </select>
+      <a href="#" class="btn-download btn"
+         onclick="downloadReport('revenue', 'days-revenue'); return false;">
+        ⬇ Download PDF
+      </a>
+    </div>
+  </div>
+
+  <!-- Inventory Report -->
+  <div class="col-md-6 col-lg-3">
+    <div class="rpt-card card text-center">
+      <div class="rpt-icon">📦</div>
+      <h5>Inventory Report</h5>
+      <p class="text-muted small mb-3">Full spare parts stock levels and vehicle catalogue.</p>
+      <div style="height:2.4rem;" class="mb-3"></div>
+      <a href="{% url 'download_report' 'inventory' %}" class="btn-download btn">
+        ⬇ Download PDF
+      </a>
+    </div>
+  </div>
+
+  <!-- Job Cards Report -->
+  <div class="col-md-6 col-lg-3">
+    <div class="rpt-card card text-center">
+      <div class="rpt-icon">🔧</div>
+      <h5>Job Cards Report</h5>
+      <p class="text-muted small mb-3">Workshop service records with costs and status.</p>
+      <select class="days-select w-100 mb-3" id="days-job_cards">
+        <option value="7">Last 7 days</option>
+        <option value="30" selected>Last 30 days</option>
+        <option value="90">Last 90 days</option>
+        <option value="365">Last year</option>
+      </select>
+      <a href="#" class="btn-download btn"
+         onclick="downloadReport('job_cards', 'days-job_cards'); return false;">
+        ⬇ Download PDF
+      </a>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function downloadReport(type, selectId) {
+    const days = document.getElementById(selectId)?.value || 30;
+    window.location.href = `/ai/reports/download/${type}/?days=${days}`;
+  }
+</script>
+{% endblock %}

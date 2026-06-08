@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+{% block title %}Inventory Management - AutoWorld{% endblock %}
+
+{% block content %}
+<style>
+  .inv-header {
+    background: linear-gradient(135deg, #1e1153 0%, #2d1b8e 100%);
+    border-radius: 16px;
+    color: white;
+    padding: 2rem;
+    margin-bottom: 2rem;
+  }
+  .stat-card {
+    border: none;
+    border-radius: 14px;
+    padding: 1.25rem 1.5rem;
+    box-shadow: 0 4px 16px rgba(30,17,83,0.08);
+    transition: transform 0.2s;
+  }
+  .stat-card:hover { transform: translateY(-3px); }
+  .stat-icon {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem;
+  }
+  .tab-nav .nav-link {
+    border-radius: 10px;
+    color: #555;
+    font-weight: 500;
+    padding: 0.6rem 1.2rem;
+    border: none;
+  }
+  .tab-nav .nav-link.active {
+    background: #1e1153;
+    color: white;
+  }
+  .inv-table th {
+    background: #f4f3ff;
+    color: #1e1153;
+    font-weight: 600;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: none;
+  }
+  .inv-table td { vertical-align: middle; border-color: #f0f0f0; }
+  .inv-table tbody tr:hover { background: #fafafa; }
+  .badge-stock {
+    border-radius: 8px;
+    padding: 0.3rem 0.7rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+  .search-bar {
+    border-radius: 10px;
+    border: 2px solid #e0e0e0;
+    padding: 0.6rem 1rem;
+    transition: border-color 0.2s;
+  }
+  .search-bar:focus { border-color: #1e1153; box-shadow: none; outline: none; }
+  .btn-action {
+    border-radius: 8px;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.82rem;
+    font-weight: 500;
+  }
+  .product-img {
+    width: 48px; height: 48px;
+    object-fit: cover;
+    border-radius: 10px;
+    background: #f0f0f0;
+  }
+  .product-img-placeholder {
+    width: 48px; height: 48px;
+    border-radius: 10px;
+    background: #f0f0f0;
+    display: flex; align-items: center; justify-content: center;
+    color: #aaa; font-size: 1.2rem;
+  }
+</style>
+
+<!-- Header -->
+<div class="inv-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+  <div>
+    <h3 class="fw-bold mb-1">📦 Inventory Management</h3>
+    <p class="mb-0 opacity-75">Manage vehicles and spare parts stock</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'home' %}" class="btn btn-outline-light btn-sm rounded-pill">
+      ← Dashboard
+    </a>
+  </div>
+</div>
+
+<!-- Stats Row -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card card h-100">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon" style="background:#e8f5e9;">🚗</div>
+        <div>
+          <div class="text-muted small">Total Vehicles</div>
+          <div class="fw-bold fs-4" style="color:#1e1153;">{{ vehicles.count }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card card h-100">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon" style="background:#fff3e0;">🔧</div>
+        <div>
+          <div class="text-muted small">Spare Parts</div>
+          <div class="fw-bold fs-4" style="color:#1e1153;">{{ spare_parts.count }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card card h-100">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon" style="background:#e3f2fd;">📊</div>
+        <div>
+          <div class="text-muted small">Total Items</div>
+          <div class="fw-bold fs-4" style="color:#1e1153;">{{ vehicles.count|add:spare_parts.count }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card card h-100">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon" style="background:#fce4ec;">💰</div>
+        <div>
+          <div class="text-muted small">Catalogue</div>
+          <div class="fw-bold fs-4" style="color:#1e1153;">Active</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tabs -->
+<ul class="nav tab-nav gap-2 mb-3" id="invTabs">
+  <li class="nav-item">
+    <button class="nav-link active" onclick="showTab('vehicles', this)">
+      🚗 Vehicles <span class="badge bg-secondary ms-1">{{ vehicles.count }}</span>
+    </button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link" onclick="showTab('spareparts', this)">
+      🔧 Spare Parts <span class="badge bg-secondary ms-1">{{ spare_parts.count }}</span>
+    </button>
+  </li>
+</ul>
+
+<!-- Search -->
+<div class="mb-3">
+  <input type="text" id="searchInput" class="search-bar form-control w-100"
+         placeholder="🔍 Search by name, brand, or compatibility..."
+         oninput="filterTable()">
+</div>
+
+<!-- Vehicles Table -->
+<div id="tab-vehicles">
+  <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+    <div class="table-responsive">
+      <table class="table inv-table mb-0" id="vehicleTable">
+        <thead>
+          <tr>
+            <th>Vehicle</th>
+            <th>Brand</th>
+            <th>Year</th>
+            <th>Price</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for vehicle in vehicles %}
+          <tr>
+            <td>
+              <div class="d-flex align-items-center gap-3">
+                {% if vehicle.image %}
+                  <img src="{{ vehicle.image.url }}" class="product-img" alt="{{ vehicle.model }}">
+                {% else %}
+                  <div class="product-img-placeholder">🚗</div>
+                {% endif %}
+                <div>
+                  <div class="fw-semibold">{{ vehicle.model }}</div>
+                  <div class="text-muted small">{{ vehicle.brand }}</div>
+                </div>
+              </div>
+            </td>
+            <td>{{ vehicle.brand }}</td>
+            <td>{{ vehicle.year }}</td>
+            <td class="fw-semibold text-success">KES {{ vehicle.price|floatformat:0 }}</td>
+            <td>
+              <div class="d-flex gap-1">
+                <a href="{% url 'vehicle_detail' vehicle.id %}"
+                   class="btn btn-outline-primary btn-action">View</a>
+                <a href="{% url 'delete_vehicle' vehicle.id %}"
+                   class="btn btn-outline-danger btn-action"
+                   onclick="return confirm('Delete {{ vehicle.brand }} {{ vehicle.model }}?')">
+                  Delete
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" class="text-center text-muted py-4">No vehicles in inventory.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Spare Parts Table -->
+<div id="tab-spareparts" style="display:none;">
+  <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+    <div class="table-responsive">
+      <table class="table inv-table mb-0" id="spareTable">
+        <thead>
+          <tr>
+            <th>Part</th>
+            <th>Compatible Vehicle</th>
+            <th>Price</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for part in spare_parts %}
+          <tr>
+            <td>
+              <div class="d-flex align-items-center gap-3">
+                {% if part.image %}
+                  <img src="{{ part.image.url }}" class="product-img" alt="{{ part.name }}">
+                {% else %}
+                  <div class="product-img-placeholder">🔧</div>
+                {% endif %}
+                <div>
+                  <div class="fw-semibold">{{ part.name }}</div>
+                  <div class="text-muted small">{{ part.description|truncatechars:40 }}</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span class="badge badge-stock" style="background:#e8f5e9; color:#2e7d32;">
+                {{ part.compatible_vehicle }}
+              </span>
+            </td>
+            <td class="fw-semibold text-success">KES {{ part.price|floatformat:0 }}</td>
+            <td>
+              <div class="d-flex gap-1">
+                <a href="{% url 'spareparts_list' %}"
+                   class="btn btn-outline-primary btn-action">View</a>
+                <a href="{% url 'delete_spare' part.id %}"
+                   class="btn btn-outline-danger btn-action"
+                   onclick="return confirm('Delete {{ part.name }}?')">
+                  Delete
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="4" class="text-center text-muted py-4">No spare parts in inventory.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  function showTab(tab, btn) {
+    document.getElementById('tab-vehicles').style.display   = tab === 'vehicles'   ? 'block' : 'none';
+    document.getElementById('tab-spareparts').style.display = tab === 'spareparts' ? 'block' : 'none';
+    document.querySelectorAll('.tab-nav .nav-link').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('searchInput').value = '';
+  }
+
+  function filterTable() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    const activeTab = document.getElementById('tab-vehicles').style.display !== 'none'
+      ? 'vehicleTable' : 'spareTable';
+    const rows = document.querySelectorAll(`#${activeTab} tbody tr`);
+    rows.forEach(row => {
+      row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  }
+</script>
+{% endblock %}

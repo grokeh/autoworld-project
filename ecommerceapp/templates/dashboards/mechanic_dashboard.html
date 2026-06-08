@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Mechanic Dashboard - AutoWorld{% endblock %}
+
+{% block content %}
+<style>
+  .mech-header { background:linear-gradient(135deg,#1e1153,#2d1b8e); border-radius:16px; color:white; padding:2rem; margin-bottom:2rem; }
+  .stat-card { border:none; border-radius:14px; box-shadow:0 4px 16px rgba(30,17,83,.08); padding:1.25rem 1.5rem; }
+  .quick-link { border:none; border-radius:14px; box-shadow:0 4px 16px rgba(30,17,83,.08); padding:1.5rem; text-align:center; text-decoration:none; color:#1e1153; transition:transform .2s; display:block; }
+  .quick-link:hover { transform:translateY(-3px); color:#1e1153; }
+  .quick-link .icon { font-size:2rem; margin-bottom:.5rem; }
+  .badge-Pending   { background:#fff8e1; color:#f57f17; border-radius:8px; padding:.25rem .6rem; font-size:.78rem; font-weight:600; }
+  .badge-Approved  { background:#e8f5e9; color:#2e7d32; border-radius:8px; padding:.25rem .6rem; font-size:.78rem; font-weight:600; }
+  .badge-Completed { background:#e3f2fd; color:#1565c0; border-radius:8px; padding:.25rem .6rem; font-size:.78rem; font-weight:600; }
+  .badge-Cancelled { background:#f5f5f5; color:#616161; border-radius:8px; padding:.25rem .6rem; font-size:.78rem; font-weight:600; }
+  #clock { font-size:.9rem; }
+</style>
+
+<!-- Header -->
+<div class="mech-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+  <div>
+    <h3 class="fw-bold mb-1">🧑‍🔧 Mechanic Dashboard</h3>
+    <p class="mb-0 opacity-75">Welcome, {{ user.first_name|default:user.username }}!</p>
+  </div>
+  <span id="clock" class="opacity-75"></span>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card card text-center">
+      <div class="text-muted small">Total Bookings</div>
+      <div class="fw-bold fs-3" style="color:#1e1153;">{{ total_bookings|default:0 }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card card text-center">
+      <div class="text-muted small">Pending</div>
+      <div class="fw-bold fs-3 text-warning">{{ pending_bookings|default:0 }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card card text-center">
+      <div class="text-muted small">Completed</div>
+      <div class="fw-bold fs-3 text-success">{{ completed_bookings|default:0 }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card card text-center">
+      <div class="text-muted small">Open Job Cards</div>
+      <div class="fw-bold fs-3" style="color:#1e1153;">{{ open_job_cards|default:0 }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Links -->
+<h6 class="fw-bold mb-3" style="color:#1e1153;">Quick Access</h6>
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <a href="{% url 'job_card_list' %}" class="quick-link card">
+      <div class="icon">🔧</div>
+      <div class="fw-semibold small">Job Cards</div>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a href="{% url 'job_card_create' %}" class="quick-link card">
+      <div class="icon">➕</div>
+      <div class="fw-semibold small">New Job Card</div>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a href="{% url 'mechanics_list' %}" class="quick-link card">
+      <div class="icon">👥</div>
+      <div class="fw-semibold small">All Mechanics</div>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a href="{% url 'notifications' %}" class="quick-link card">
+      <div class="icon">🔔</div>
+      <div class="fw-semibold small">Notifications</div>
+    </a>
+  </div>
+</div>
+
+<!-- Recent Bookings -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+  <div class="card-header bg-light d-flex justify-content-between align-items-center">
+    <span class="fw-semibold" style="color:#1e1153;">📅 Recent Bookings</span>
+    <input type="text" id="bookingSearch" class="form-control form-control-sm w-auto"
+           placeholder="Search..." oninput="filterBookings()">
+  </div>
+  <div class="table-responsive">
+    <table class="table mb-0" id="bookingTable">
+      <thead style="background:#f4f3ff;">
+        <tr>
+          <th style="color:#1e1153;">Customer</th>
+          <th style="color:#1e1153;">Service</th>
+          <th style="color:#1e1153;">Date</th>
+          <th style="color:#1e1153;">Time</th>
+          <th style="color:#1e1153;">Status</th>
+          <th style="color:#1e1153;">Job Card</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for booking in recent_bookings %}
+        <tr>
+          <td class="fw-semibold">{{ booking.user.username }}</td>
+          <td>{{ booking.service_type }}</td>
+          <td>{{ booking.booking_date }}</td>
+          <td>{{ booking.time }}</td>
+          <td><span class="badge-{{ booking.status }}">{{ booking.status }}</span></td>
+          <td>
+            {% if booking.job_card %}
+              <a href="{% url 'job_card_detail' booking.job_card.id %}" class="btn btn-sm btn-outline-primary rounded-pill px-2">View JC</a>
+            {% else %}
+              <a href="{% url 'job_card_create' %}?booking_id={{ booking.id }}" class="btn btn-sm btn-outline-success rounded-pill px-2">+ Create</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center text-muted py-4">No bookings yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Notifications -->
+<div class="card border-0 shadow-sm rounded-3">
+  <div class="card-header bg-light fw-semibold" style="color:#1e1153;">🔔 Notifications</div>
+  <ul class="list-group list-group-flush">
+    {% for note in notifications %}
+      <li class="list-group-item d-flex justify-content-between align-items-center {% if not note.is_read %}fw-semibold{% endif %}">
+        <span>{{ note.message }}</span>
+        <span class="text-muted small">{{ note.created_at|date:"M d, H:i" }}</span>
+      </li>
+    {% empty %}
+      <li class="list-group-item text-muted text-center py-3">No notifications.</li>
+    {% endfor %}
+  </ul>
+</div>
+
+<script>
+  // Live clock
+  function updateClock() {
+    document.getElementById('clock').textContent = new Date().toLocaleString();
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  // Booking search
+  function filterBookings() {
+    const q = document.getElementById('bookingSearch').value.toLowerCase();
+    document.querySelectorAll('#bookingTable tbody tr').forEach(row => {
+      row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  }
+</script>
+{% endblock %}

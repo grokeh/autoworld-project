@@ -1,0 +1,308 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}AutoWorld - Your Automotive Marketplace{% endblock %}
+
+{% block content %}
+<style>
+  /* ── Hero ── */
+  .hero {
+    background: linear-gradient(135deg, #1e1153 0%, #2d1b8e 60%, #11ba1f22 100%);
+    border-radius: 20px;
+    padding: 4rem 2rem;
+    color: white;
+    margin-bottom: 3rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: url("{% static 'ecommerceapp/img/hero-bg.jpg' %}") center/cover no-repeat;
+    opacity: .08;
+  }
+  .hero-content { position: relative; z-index: 1; }
+  .hero h1 { font-size: clamp(1.8rem, 4vw, 3rem); font-weight: 800; line-height: 1.2; }
+  .hero p  { font-size: 1.1rem; opacity: .85; max-width: 560px; }
+
+  /* ── Service Cards ── */
+  .service-card {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(30,17,83,.09);
+    transition: transform .2s, box-shadow .2s;
+    overflow: hidden;
+  }
+  .service-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 32px rgba(30,17,83,.15);
+  }
+  .service-card .card-img-top {
+    height: 180px; object-fit: cover;
+  }
+  .service-card .card-body { padding: 1.25rem; }
+  .service-card .card-title { font-weight: 700; color: #1e1153; }
+
+  /* ── Offer Cards ── */
+  .offer-card {
+    border: none; border-radius: 14px;
+    background: linear-gradient(135deg, #1e1153, #2d1b8e);
+    color: white;
+    padding: 1.5rem;
+    box-shadow: 0 4px 16px rgba(30,17,83,.15);
+    transition: transform .2s;
+  }
+  .offer-card:hover { transform: translateY(-4px); }
+  .offer-badge {
+    background: #11ba1f; color: white;
+    border-radius: 8px; padding: .25rem .65rem;
+    font-size: .78rem; font-weight: 700;
+  }
+
+  /* ── Stats Strip ── */
+  .stats-strip {
+    background: #1e1153; border-radius: 16px;
+    padding: 1.5rem 2rem; color: white;
+    margin-bottom: 3rem;
+  }
+  .stat-item { text-align: center; }
+  .stat-item .num { font-size: 2rem; font-weight: 800; color: #11ba1f; }
+  .stat-item .lbl { font-size: .82rem; opacity: .75; }
+
+  /* ── Testimonials ── */
+  .testimonial {
+    border: none; border-radius: 14px;
+    box-shadow: 0 4px 16px rgba(30,17,83,.07);
+    padding: 1.5rem;
+  }
+  .testimonial .quote { font-size: 1rem; color: #333; font-style: italic; }
+  .testimonial .author { font-weight: 700; color: #1e1153; font-size: .9rem; }
+
+  /* ── Section Titles ── */
+  .section-heading { font-weight: 800; color: #1e1153; }
+  .section-sub { color: #888; font-size: .95rem; }
+
+  /* ── Admin Floating Panel ── */
+  .admin-fab {
+    position: fixed; bottom: 1.5rem; right: 1.5rem;
+    z-index: 1050;
+  }
+  .admin-fab .fab-btn {
+    width: 52px; height: 52px; border-radius: 50%;
+    background: #1e1153; color: white; border: none;
+    font-size: 1.3rem; box-shadow: 0 4px 16px rgba(30,17,83,.4);
+    transition: transform .2s;
+  }
+  .admin-fab .fab-btn:hover { transform: scale(1.1); }
+  .admin-fab .fab-menu {
+    position: absolute; bottom: 60px; right: 0;
+    background: white; border-radius: 14px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.15);
+    padding: .75rem; min-width: 200px;
+    display: none;
+  }
+  .admin-fab .fab-menu.open { display: block; }
+  .admin-fab .fab-menu a {
+    display: block; padding: .5rem .75rem;
+    border-radius: 8px; text-decoration: none;
+    color: #1e1153; font-size: .88rem; font-weight: 500;
+    transition: background .15s;
+  }
+  .admin-fab .fab-menu a:hover { background: #f4f3ff; }
+</style>
+
+<!-- ── Hero ──────────────────────────────────────────────────────────────── -->
+<div class="hero">
+  <div class="hero-content row align-items-center">
+    <div class="col-lg-7">
+      {% if home_content %}
+        <h1>{{ home_content.headline }}</h1>
+        <p class="mt-3">{{ home_content.subheadline }}</p>
+        {% if home_content.call_to_action %}
+          <a href="{% url 'get_started' %}" class="btn btn-lg rounded-pill px-5 mt-3 fw-bold"
+             style="background:#11ba1f; color:white;">
+            {{ home_content.call_to_action }}
+          </a>
+        {% endif %}
+      {% else %}
+        <h1>Your One-Stop Automotive Marketplace</h1>
+        <p class="mt-3">Browse vehicles, shop spare parts, and book certified mechanics — all in one place.</p>
+        <div class="d-flex gap-3 mt-4 flex-wrap">
+          <a href="{% url 'vehicle_list' %}" class="btn btn-lg rounded-pill px-4 fw-bold"
+             style="background:#11ba1f; color:white;">Browse Vehicles</a>
+          <a href="{% url 'mechanics_list' %}" class="btn btn-lg rounded-pill px-4 fw-bold"
+             style="background:white; color:#1e1153;">Book a Mechanic</a>
+        </div>
+      {% endif %}
+    </div>
+    <div class="col-lg-5 d-none d-lg-flex justify-content-end">
+      <div style="font-size:8rem; opacity:.3;">🚗</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Stats Strip ───────────────────────────────────────────────────────── -->
+<div class="stats-strip">
+  <div class="row g-3 text-center">
+    <div class="col-6 col-md-3 stat-item">
+      <div class="num">500+</div>
+      <div class="lbl">Vehicles Listed</div>
+    </div>
+    <div class="col-6 col-md-3 stat-item">
+      <div class="num">200+</div>
+      <div class="lbl">Spare Parts</div>
+    </div>
+    <div class="col-6 col-md-3 stat-item">
+      <div class="num">50+</div>
+      <div class="lbl">Certified Mechanics</div>
+    </div>
+    <div class="col-6 col-md-3 stat-item">
+      <div class="num">1K+</div>
+      <div class="lbl">Happy Customers</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Core Services ─────────────────────────────────────────────────────── -->
+<div class="mb-5">
+  <h2 class="section-heading mb-1">Our Services</h2>
+  <p class="section-sub mb-4">Everything your vehicle needs, in one place</p>
+  <div class="row g-4">
+    <div class="col-md-4">
+      <div class="service-card card h-100">
+        <div style="height:180px; background:linear-gradient(135deg,#1e1153,#2d1b8e); display:flex; align-items:center; justify-content:center; font-size:4rem;">🚗</div>
+        <div class="card-body">
+          <h5 class="card-title">Vehicle Sales</h5>
+          <p class="text-muted small">Browse and purchase new and used vehicles from trusted dealers across Kenya.</p>
+          <a href="{% url 'vehicle_list' %}" class="btn rounded-pill px-4 fw-semibold"
+             style="background:#1e1153; color:white;">Explore Vehicles</a>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="service-card card h-100">
+        <div style="height:180px; background:linear-gradient(135deg,#11ba1f,#0d9e1a); display:flex; align-items:center; justify-content:center; font-size:4rem;">🔩</div>
+        <div class="card-body">
+          <h5 class="card-title">Spare Parts</h5>
+          <p class="text-muted small">Shop high-quality spare parts and accessories for all vehicle makes and models.</p>
+          <a href="{% url 'spareparts_list' %}" class="btn rounded-pill px-4 fw-semibold"
+             style="background:#11ba1f; color:white;">Shop Parts</a>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="service-card card h-100">
+        <div style="height:180px; background:linear-gradient(135deg,#fd7e14,#e65c00); display:flex; align-items:center; justify-content:center; font-size:4rem;">🧑‍🔧</div>
+        <div class="card-body">
+          <h5 class="card-title">Book a Mechanic</h5>
+          <p class="text-muted small">Find and book certified mechanics and automotive engineers near you.</p>
+          <a href="{% url 'mechanics_list' %}" class="btn rounded-pill px-4 fw-semibold"
+             style="background:#fd7e14; color:white;">Find Mechanics</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Active Services from DB ───────────────────────────────────────────── -->
+{% if services %}
+<div class="mb-5">
+  <h2 class="section-heading mb-1">Workshop Services</h2>
+  <p class="section-sub mb-4">Professional services offered at AutoWorld</p>
+  <div class="row g-3">
+    {% for service in services %}
+    <div class="col-md-4">
+      <div class="service-card card h-100">
+        {% if service.image %}
+          <img src="{{ service.image.url }}" class="card-img-top" alt="{{ service.name }}">
+        {% else %}
+          <div style="height:140px; background:#f4f3ff; display:flex; align-items:center; justify-content:center; font-size:3rem;">🔧</div>
+        {% endif %}
+        <div class="card-body">
+          <h6 class="card-title">{{ service.name }}</h6>
+          <p class="text-muted small mb-2">{{ service.description|truncatechars:80 }}</p>
+          <span class="fw-bold" style="color:#11ba1f;">KES {{ service.price|floatformat:0 }}</span>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- ── Active Offers ─────────────────────────────────────────────────────── -->
+{% if offers %}
+<div class="mb-5">
+  <h2 class="section-heading mb-1">🎁 Current Offers</h2>
+  <p class="section-sub mb-4">Limited-time deals — don't miss out</p>
+  <div class="row g-3">
+    {% for offer in offers %}
+    <div class="col-md-6 col-lg-3">
+      <div class="offer-card h-100">
+        <span class="offer-badge mb-2 d-inline-block">{{ offer.discount_percentage }}% OFF</span>
+        <h6 class="fw-bold mt-2">{{ offer.title }}</h6>
+        <p class="small opacity-75 mb-2">{{ offer.description|truncatechars:70 }}</p>
+        <div class="small opacity-60">
+          Ends: {{ offer.end_date|date:"M d, Y" }}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- ── Testimonials ──────────────────────────────────────────────────────── -->
+<div class="mb-5">
+  <h2 class="section-heading mb-1">What Customers Say</h2>
+  <p class="section-sub mb-4">Trusted by drivers across Kenya</p>
+  <div class="row g-3">
+    <div class="col-md-4">
+      <div class="testimonial card">
+        <p class="quote">"AutoWorld made buying my first car stress-free and exciting!"</p>
+        <div class="author mt-2">— Jane D. ⭐⭐⭐⭐⭐</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="testimonial card">
+        <p class="quote">"I always find genuine parts here at the best prices. Highly recommended."</p>
+        <div class="author mt-2">— Mark S. ⭐⭐⭐⭐⭐</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="testimonial card">
+        <p class="quote">"Booked a mechanic online — they arrived on time and did a perfect job."</p>
+        <div class="author mt-2">— Aisha K. ⭐⭐⭐⭐⭐</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── CTA Banner ────────────────────────────────────────────────────────── -->
+{% if not user.is_authenticated %}
+<div class="text-center py-5 px-3 mb-4 rounded-3"
+     style="background:linear-gradient(135deg,#1e1153,#2d1b8e); color:white;">
+  <h3 class="fw-bold mb-2">Ready to get started?</h3>
+  <p class="opacity-75 mb-4">Create a free account and access all AutoWorld services.</p>
+  <a href="{% url 'register' %}" class="btn btn-lg rounded-pill px-5 fw-bold"
+     style="background:#11ba1f; color:white;">Create Account</a>
+</div>
+{% endif %}
+
+<!-- ── Admin Floating Action Button (staff only) ─────────────────────────── -->
+{% if user.is_staff %}
+<div class="admin-fab">
+  <div class="fab-menu" id="fabMenu">
+    <div class="fw-bold small text-muted px-2 pb-1 mb-1" style="border-bottom:1px solid #f0f0f0;">⚙️ Quick Actions</div>
+    <a href="{% url 'add_service' %}">➕ Add Service</a>
+    <a href="{% url 'add_offer' %}">🎁 New Offer</a>
+    <a href="{% url 'manage_inventory' %}">📦 Inventory</a>
+    <a href="{% url 'booking_insights' %}">📅 Bookings</a>
+    <a href="{% url 'job_card_list' %}">🔧 Job Cards</a>
+    <a href="{% url 'dashboard' %}">📊 Dashboard</a>
+  </div>
+  <button class="fab-btn" onclick="document.getElementById('fabMenu').classList.toggle('open')"
+          title="Admin Tools">⚙️</button>
+</div>
+{% endif %}
+
+{% endblock %}

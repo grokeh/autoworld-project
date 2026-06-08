@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Pending Payments - AutoWorld{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+  <h2 class="mb-4">💳 Pending Payment Confirmations</h2>
+
+  {% if messages %}
+    {% for msg in messages %}
+      <div class="alert alert-{{ msg.tags }}">{{ msg }}</div>
+    {% endfor %}
+  {% endif %}
+
+  {% if bookings %}
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover align-middle">
+      <thead class="table-dark">
+        <tr>
+          <th>#</th>
+          <th>Customer</th>
+          <th>Mechanic</th>
+          <th>Date</th>
+          <th>Time</th>
+          <th>Booked At</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for booking in bookings %}
+        <tr>
+          <td>{{ booking.id }}</td>
+          <td>{{ booking.user.username }}</td>
+          <td>{{ booking.mechanic.name }}</td>
+          <td>{{ booking.booking_date }}</td>
+          <td>{{ booking.time }}</td>
+          <td>{{ booking.created_at|date:"M d, Y H:i" }}</td>
+          <td><span class="badge bg-warning text-dark">{{ booking.status }}</span></td>
+          <td>
+            <a href="{% url 'confirm_booking_payment' booking.id %}"
+               class="btn btn-sm btn-success">
+              ✅ Confirm Payment
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <div class="alert alert-info">No bookings awaiting payment confirmation.</div>
+  {% endif %}
+</div>
+{% endblock %}

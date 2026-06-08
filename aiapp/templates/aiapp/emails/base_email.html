@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block subject %}AutoWorld{% endblock %}</title>
+  <style>
+    body { margin:0; padding:0; background:#f5f5f5; font-family:'Segoe UI',Arial,sans-serif; color:#333; }
+    .wrapper { max-width:600px; margin:0 auto; padding:24px 16px; }
+    .card { background:white; border-radius:16px; overflow:hidden; box-shadow:0 4px 20px rgba(0,0,0,.08); }
+    .header { background:linear-gradient(135deg,#1e1153,#2d1b8e); padding:32px 32px 24px; text-align:center; }
+    .header .logo { color:#11ba1f; font-size:28px; font-weight:800; letter-spacing:-1px; margin:0; }
+    .header .tagline { color:rgba(255,255,255,.7); font-size:13px; margin:4px 0 0; }
+    .body { padding:32px; }
+    .body h2 { color:#1e1153; font-size:22px; font-weight:700; margin:0 0 8px; }
+    .body p { color:#555; line-height:1.6; margin:0 0 16px; font-size:15px; }
+    .info-box { background:#f4f3ff; border-radius:12px; padding:20px; margin:20px 0; }
+    .info-row { display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #e8e7ff; font-size:14px; }
+    .info-row:last-child { border-bottom:none; }
+    .info-label { color:#888; }
+    .info-value { font-weight:600; color:#1e1153; }
+    .btn { display:inline-block; background:linear-gradient(135deg,#11ba1f,#0d9e1a); color:white !important; text-decoration:none; padding:14px 32px; border-radius:50px; font-weight:700; font-size:15px; margin:8px 0; }
+    .btn-outline { display:inline-block; border:2px solid #1e1153; color:#1e1153 !important; text-decoration:none; padding:12px 28px; border-radius:50px; font-weight:600; font-size:14px; margin:8px 0; }
+    .footer { background:#f9f9f9; padding:20px 32px; text-align:center; border-top:1px solid #f0f0f0; }
+    .footer p { color:#aaa; font-size:12px; margin:4px 0; }
+    .footer a { color:#1e1153; text-decoration:none; }
+    .status-approved  { background:#e8f5e9; color:#2e7d32; border-radius:8px; padding:6px 14px; font-weight:700; display:inline-block; }
+    .status-cancelled { background:#fce4ec; color:#c62828; border-radius:8px; padding:6px 14px; font-weight:700; display:inline-block; }
+    .status-completed { background:#e3f2fd; color:#1565c0; border-radius:8px; padding:6px 14px; font-weight:700; display:inline-block; }
+    .star { color:#ffc107; font-size:24px; }
+    .divider { border:none; border-top:1px solid #f0f0f0; margin:20px 0; }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="card">
+    <div class="header">
+      <p class="logo">AutoWorld</p>
+      <p class="tagline">Your Automotive Marketplace</p>
+    </div>
+    <div class="body">
+      {% block content %}{% endblock %}
+    </div>
+    <div class="footer">
+      <p>© 2025 AutoWorld · Nairobi, Kenya</p>
+      <p><a href="{{ site_url }}">Visit AutoWorld</a> · <a href="mailto:{{ support_email }}">Contact Support</a></p>
+      <p style="color:#ccc; font-size:11px;">You received this email because you have an account on AutoWorld.</p>
+    </div>
+  </div>
+</div>
+</body>
+</html>

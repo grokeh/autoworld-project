@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}No Active Order - AutoWorld{% endblock %}
+
+{% block content %}
+<style>
+  .status-box { max-width:520px; margin:4rem auto; text-align:center; }
+  .status-icon { width:90px; height:90px; border-radius:50%; background:#f4f3ff; display:flex; align-items:center; justify-content:center; font-size:2.5rem; margin:0 auto 1.5rem; }
+</style>
+
+<div class="status-box">
+  <div class="status-icon">🛒</div>
+  <h3 class="fw-bold mb-2" style="color:#1e1153;">No Active Order</h3>
+  <p class="text-muted mb-4">Your cart is empty. Add some items before proceeding to checkout.</p>
+  <div class="d-flex gap-3 justify-content-center flex-wrap">
+    <a href="{% url 'vehicle_list' %}" class="btn rounded-pill px-4 fw-semibold"
+       style="background:#1e1153; color:white;">Browse Vehicles</a>
+    <a href="{% url 'spareparts_list' %}" class="btn rounded-pill px-4 fw-semibold"
+       style="background:#11ba1f; color:white;">Shop Parts</a>
+  </div>
+</div>
+{% endblock %}

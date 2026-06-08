@@ -1,0 +1,4 @@
+# Exclude trained model files (large, environment-specific)
+*.pkl
+# Keep metadata tracked
+!model_meta.json

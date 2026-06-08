@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Mechanic Performance - AutoWorld{% endblock %}
+
+{% block content %}
+<style>
+  .perf-header { background:linear-gradient(135deg,#1e1153,#2d1b8e); border-radius:16px; color:white; padding:2rem; margin-bottom:2rem; }
+  .perf-card { border:none; border-radius:14px; box-shadow:0 4px 16px rgba(30,17,83,.08); padding:1.5rem; }
+  .stars-display { color:#ffc107; font-size:1.1rem; }
+  .rating-bar { background:#f4f3ff; border-radius:8px; height:8px; overflow:hidden; }
+  .rating-fill { height:100%; border-radius:8px; background:linear-gradient(90deg,#ffc107,#fd7e14); }
+</style>
+
+<div class="perf-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+  <div>
+    <h3 class="fw-bold mb-1">🧑‍🔧 Mechanic Performance</h3>
+    <p class="mb-0 opacity-75">Ratings, bookings, and completion rates</p>
+  </div>
+  <a href="{% url 'dashboard' %}" class="btn btn-outline-light rounded-pill px-4 fw-semibold">← Dashboard</a>
+</div>
+
+<div class="row g-4">
+  {% for m in mechanics %}
+  <div class="col-md-6 col-lg-4">
+    <div class="perf-card card">
+      <div class="d-flex align-items-center gap-3 mb-3">
+        {% if m.profile_pic %}
+          <img src="{{ m.profile_pic.url }}" style="width:52px;height:52px;border-radius:50%;object-fit:cover;">
+        {% else %}
+          <div style="width:52px;height:52px;border-radius:50%;background:#f4f3ff;display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🧑‍🔧</div>
+        {% endif %}
+        <div>
+          <div class="fw-bold" style="color:#1e1153;">{{ m.name }}</div>
+          <div class="text-muted small">{{ m.specialization }}</div>
+        </div>
+      </div>
+
+      <!-- Rating -->
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <span class="stars-display">
+          {% if m.avg_rating %}
+            {% for i in "12345" %}
+              {% if forloop.counter <= m.avg_rating|floatformat:0|add:"0" %}★{% else %}☆{% endif %}
+            {% endfor %}
+          {% else %}☆☆☆☆☆{% endif %}
+        </span>
+        <span class="fw-bold">{{ m.avg_rating|floatformat:1|default:"—" }}</span>
+        <span class="text-muted small">({{ m.total_ratings }} review{{ m.total_ratings|pluralize }})</span>
+      </div>
+
+      {% if m.avg_rating %}
+      <div class="rating-bar mb-3">
+        <div class="rating-fill" style="width:{{ m.avg_rating|floatformat:0|add:"0" }}0%"></div>
+      </div>
+      {% endif %}
+
+      <!-- Stats -->
+      <div class="row g-2 text-center">
+        <div class="col-4">
+          <div class="fw-bold" style="color:#1e1153;">{{ m.total_bookings }}</div>
+          <div class="text-muted" style="font-size:.72rem;">Total</div>
+        </div>
+        <div class="col-4">
+          <div class="fw-bold text-success">{{ m.completed_bookings }}</div>
+          <div class="text-muted" style="font-size:.72rem;">Completed</div>
+        </div>
+        <div class="col-4">
+          <div class="fw-bold text-primary">
+            {% if m.total_bookings > 0 %}
+              {{ m.completed_bookings|floatformat:0 }}%
+            {% else %}—{% endif %}
+          </div>
+          <div class="text-muted" style="font-size:.72rem;">Rate</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12 text-center text-muted py-5">No mechanics found.</div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}About Us - AutoWorld{% endblock %}
+
+{% block content %}
+<style>
+  .about-hero { background:linear-gradient(135deg,#1e1153,#2d1b8e); border-radius:20px; color:white; padding:4rem 2rem; margin-bottom:3rem; text-align:center; }
+  .value-card { border:none; border-radius:16px; box-shadow:0 4px 16px rgba(30,17,83,.08); padding:1.75rem; text-align:center; height:100%; }
+  .value-icon { font-size:2.5rem; margin-bottom:1rem; }
+  .value-card h5 { font-weight:700; color:#1e1153; }
+  .team-card { border:none; border-radius:16px; box-shadow:0 4px 16px rgba(30,17,83,.08); padding:1.5rem; text-align:center; }
+  .team-avatar { width:72px; height:72px; border-radius:50%; background:#f4f3ff; display:flex; align-items:center; justify-content:center; font-size:2rem; margin:0 auto 1rem; }
+  .section-heading { font-weight:800; color:#1e1153; }
+  .section-sub { color:#888; font-size:.95rem; }
+  .stat-box { background:#f4f3ff; border-radius:14px; padding:1.5rem; text-align:center; }
+  .stat-box .num { font-size:2.2rem; font-weight:800; color:#1e1153; }
+  .stat-box .lbl { color:#888; font-size:.85rem; }
+</style>
+
+<!-- Hero -->
+<div class="about-hero">
+  <h2 class="fw-bold mb-3">About AutoWorld</h2>
+  <p class="opacity-75 mb-0" style="max-width:600px; margin:0 auto;">
+    Kenya's leading AI-enhanced automotive marketplace — connecting drivers, mechanics, and spare parts suppliers in one intelligent platform.
+  </p>
+</div>
+
+<!-- Mission & Vision -->
+<div class="row g-4 mb-5">
+  <div class="col-md-6">
+    <div class="value-card card">
+      <div class="value-icon">🎯</div>
+      <h5>Our Mission</h5>
+      <p class="text-muted small">To streamline automotive service operations through intelligent technology — making vehicle ownership easier, safer, and more affordable for every Kenyan.</p>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="value-card card">
+      <div class="value-icon">🔭</div>
+      <h5>Our Vision</h5>
+      <p class="text-muted small">To be the leading hub for AI-driven automotive management in East Africa, setting the standard for efficiency, transparency, and customer satisfaction.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-5">
+  <div class="col-6 col-md-3">
+    <div class="stat-box">
+      <div class="num">500+</div>
+      <div class="lbl">Vehicles Listed</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-box">
+      <div class="num">200+</div>
+      <div class="lbl">Spare Parts</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-box">
+      <div class="num">50+</div>
+      <div class="lbl">Certified Mechanics</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-box">
+      <div class="num">1K+</div>
+      <div class="lbl">Happy Customers</div>
+    </div>
+  </div>
+</div>
+
+<!-- Core Values -->
+<div class="mb-5">
+  <h3 class="section-heading mb-1">Our Core Values</h3>
+  <p class="section-sub mb-4">What drives everything we do</p>
+  <div class="row g-3">
+    <div class="col-md-4">
+      <div class="value-card card">
+        <div class="value-icon">🤝</div>
+        <h5>Trust</h5>
+        <p class="text-muted small">Every mechanic is verified. Every transaction is secure. We build relationships on honesty.</p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="value-card card">
+        <div class="value-icon">⚡</div>
+        <h5>Efficiency</h5>
+        <p class="text-muted small">AI-powered scheduling, instant booking, and smart inventory management save you time.</p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="value-card card">
+        <div class="value-icon">🌍</div>
+        <h5>Accessibility</h5>
+        <p class="text-muted small">Affordable, user-friendly tools designed for small and medium workshops across Kenya.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CTA -->
+<div class="text-center py-5 rounded-3"
+     style="background:linear-gradient(135deg,#1e1153,#2d1b8e); color:white;">
+  <h4 class="fw-bold mb-2">Ready to experience AutoWorld?</h4>
+  <p class="opacity-75 mb-4">Join thousands of drivers and mechanics already on the platform.</p>
+  <div class="d-flex gap-3 justify-content-center flex-wrap">
+    <a href="{% url 'get_started' %}" class="btn rounded-pill px-5 fw-bold"
+       style="background:#11ba1f; color:white;">Get Started</a>
+    <a href="{% url 'mechanics_list' %}" class="btn btn-outline-light rounded-pill px-5 fw-bold">
+      Find a Mechanic
+    </a>
+  </div>
+</div>
+
+{% endblock %}

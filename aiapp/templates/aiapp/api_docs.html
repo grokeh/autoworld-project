@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}API Documentation - AutoWorld{% endblock %}
+
+{% block content %}
+<style>
+  .api-header { background:linear-gradient(135deg,#1e1153,#2d1b8e); border-radius:16px; color:white; padding:2rem; margin-bottom:2rem; }
+  .endpoint-card { border:none; border-radius:14px; box-shadow:0 4px 16px rgba(30,17,83,.08); margin-bottom:1rem; overflow:hidden; }
+  .endpoint-header { padding:1rem 1.25rem; cursor:pointer; display:flex; align-items:center; gap:.75rem; }
+  .endpoint-header:hover { background:#f8f7ff; }
+  .endpoint-body { padding:1.25rem; border-top:1px solid #f0f0f0; display:none; }
+  .endpoint-body.open { display:block; }
+  .method { border-radius:6px; padding:.2rem .6rem; font-size:.75rem; font-weight:700; color:white; min-width:52px; text-align:center; }
+  .GET    { background:#11ba1f; }
+  .POST   { background:#0d6efd; }
+  .DELETE { background:#dc3545; }
+  .PUT    { background:#fd7e14; }
+  .url-path { font-family:monospace; font-size:.9rem; color:#1e1153; font-weight:600; }
+  .param-table th { background:#f4f3ff; color:#1e1153; font-size:.78rem; font-weight:700; }
+  .param-table td { font-size:.82rem; }
+  .response-box { background:#1e1153; color:#11ba1f; border-radius:10px; padding:1rem; font-family:monospace; font-size:.8rem; white-space:pre-wrap; }
+  .section-title { font-weight:800; color:#1e1153; font-size:1rem; margin:1.5rem 0 .75rem; padding-left:.75rem; border-left:4px solid #11ba1f; }
+  .auth-badge { background:#fff3e0; color:#e65c00; border-radius:8px; padding:.2rem .6rem; font-size:.72rem; font-weight:700; }
+  .nav-pill { border-radius:20px; padding:.35rem .9rem; font-size:.82rem; border:2px solid #e0e0e0; background:white; color:#555; cursor:pointer; text-decoration:none; transition:all .2s; }
+  .nav-pill:hover, .nav-pill.active { background:#1e1153; color:white; border-color:#1e1153; }
+</style>
+
+<!-- Header -->
+<div class="api-header">
+  <h3 class="fw-bold mb-1">📡 AutoWorld API Documentation</h3>
+  <p class="mb-0 opacity-75">REST API reference for all AutoWorld endpoints</p>
+</div>
+
+<!-- Quick Nav -->
+<div class="d-flex flex-wrap gap-2 mb-4">
+  <a href="#auth" class="nav-pill">🔐 Auth</a>
+  <a href="#bookings" class="nav-pill">📅 Bookings</a>
+  <a href="#vehicles" class="nav-pill">🚗 Vehicles</a>
+  <a href="#spareparts" class="nav-pill">🔩 Spare Parts</a>
+  <a href="#mechanics" class="nav-pill">🧑‍🔧 Mechanics</a>
+  <a href="#payments" class="nav-pill">💳 Payments</a>
+  <a href="#ai" class="nav-pill">🤖 AI</a>
+  <a href="#notifications" class="nav-pill">🔔 Notifications</a>
+</div>
+
+<!-- Base URL -->
+<div class="alert rounded-3 mb-4" style="background:#f4f3ff; border:1px solid #1e1153;">
+  <strong style="color:#1e1153;">Base URL:</strong>
+  <code style="color:#11ba1f; margin-left:.5rem;">http://127.0.0.1:8000</code>
+  <span class="text-muted ms-3 small">All endpoints require session authentication unless marked public.</span>
+</div>
+
+<!-- ── Authentication ── -->
+<div class="section-title" id="auth">🔐 Authentication</div>
+
+{% include "aiapp/_endpoint.html" with method="POST" path="/auth/login/" title="Login" auth="Public" desc="Authenticate a user and start a session." params='[["username","string","required","User username"],["password","string","required","User password"]]' response='{"redirect": "/redirect-after-login/"}' %}
+
+{% include "aiapp/_endpoint.html" with method="POST" path="/auth/register/" title="Register" auth="Public" desc="Create a new customer account." params='[["username","string","required","Unique username"],["password1","string","required","Password"],["password2","string","required","Confirm password"]]' response='{"redirect": "/"}' %}
+
+{% include "aiapp/_endpoint.html" with method="GET" path="/auth/logout/" title="Logout" auth="Login required" desc="End the current user session." params='[]' response='{"redirect": "/auth/login/"}' %}
+
+<!-- ── Bookings ── -->
+<div class="section-title" id="bookings">📅 Bookings</div>
+
+{% include "aiapp/_endpoint.html" with method="GET" path="/book-mechanic/{mechanic_id}/" title="Booking Form" auth="Login required" desc="Display the booking form for a specific mechanic." params='[["mechanic_id","integer","path","Mechanic ID"]]' response='{"form": "BookingForm", "mechanic": "Mechanic object"}' %}
+
+{% include "aiapp/_endpoint.html" with method="POST" path="/book-mechanic/{mechanic_id}/" title="Create Booking" auth="Login required" desc="Submit a new booking for a mechanic." params='[["booking_date","date","required","YYYY-MM-DD"],["time","time","required","HH:MM"],["details","string","optional","Service description"]]' response='{"redirect": "/paymentapp/mechanic-payment/"}' %}
+
+{% include "aiapp/_endpoint.html" with method="GET" path="/customer/booking-history/" title="Booking History" auth="Customer" desc="List all bookings for the logged-in customer." params='[["status","string","optional","Filter: Pending|Approved|Completed|Cancelled"]]' response='[{"id": 1, "mechanic": "...", "booking_date": "...", "status": "Pending", "is_paid": false}]' %}
+
+{% include "aiapp/_endpoint.html" with method="POST" path="/customer/booking/cancel/{booking_id}/" title="Cancel Booking" auth="Customer" desc="Cancel a pending booking." params='[["booking_id","integer","path","Booking ID"]]' response='{"redirect": "/customer/booking-history/"}' %}
+
+<!-- ── Vehicles ── -->
+<div class="section-title" id="vehicles">🚗 Vehicles</div>
+
+{% include "aiapp/_endpoint.html" with method="GET" path="/vehicles/" title="List Vehicles" auth="Public" desc="Browse all available vehicles with search and filter." params='[["q","string","optional","Search by brand or model"],["min_year","integer","optional","Minimum year"],["max_year","integer","optional","Maximum year"]]' response='[{"id": 1, "brand": "Toyota", "model": "Hilux", "year": 2023, "price": "4500000.00"}]' %}
+
+{% include "aiapp/_endpoint.html" with method="GET" path="/vehicles/{vehicle_id}/" title="Vehicle Detail" auth="Public" desc="Get full details for a specific vehicle." params='[["vehicle_id","integer","path","Vehicle ID"]]' response='{"id": 1, "brand": "Toyota", "model": "Hilux", "year": 2023, "price": "4500000.00", "description": "..."}' %}
+
+<!-- ── Spare Parts ── -->
+<div class="section-title" id="spareparts">🔩 Spare Parts</div>
+
+{% include "aiapp/_endpoint.html" with method="GET" path="/spareparts/" title="List Spare Parts" auth="Public" desc="Browse all spare parts with search." params='[["q","string","optional","Search by name or compatible vehicle"]]' response='[{"id": 1, "name": "Brake Pads", "compatible_vehicle": "Toyota", "price": "3500.00", "stock_quantity": 12}]' %}
+
+<!-- ── Mechanics ── -->
+<div class="section-title" id="mechanics">🧑‍🔧 Mechanics</div>
+
+{% include "aiapp/_endpoint.html" with method="GET" path="/mechanics/" title="List Mechanics" auth="Public" desc="Browse certified mechanics with search and location filter." params='[["q","string","optional","Search by name or specialization"],["location","string","optional","Filter by location"]]' response='[{"id": 1, "name": "Ali Yusuf", "specialization": "Engine Repair", "location": "Nairobi"}]' %}
+
+<!-- ── Payments ── -->
+<div class="section-title" id="payments">💳 Payments</div>
+
+{% include "aiapp/_endpoint.html" with method="POST" path="/paymentapp/payment/stkpush/" title="M-Pesa STK Push" auth="Login required" desc="Initiate an M-Pesa STK push payment." params='[["phone","string","required","Safaricom number e.g. 0712345678"],["booking_id","integer","optional","Booking ID for deposit"],["order_id","integer","optional","Order ID for cart payment"],["amount","integer","optional","Amount in KES"]]' response='{"success": true, "message": "STK push sent. Check your phone."}' %}
+
+{% include "aiapp/_endpoint.html" with method="POST" path="/paymentapp/payment/callback/" title="M-Pesa Callback" auth="Public (Safaricom)" desc="Webhook called by Safaricom after payment. Updates booking/order status." params='[["Body.stkCallback","object","required","Safaricom callback payload"]]' response='{"ResultCode": 0, "ResultDesc": "Callback received successfully"}' %}
+
+{% include "aiapp/_endpoint.html" with method="GET" path="/paymentapp/booking-payment-status/{booking_id}/" title="Payment Status" auth="Login required" desc="Poll payment confirmation status for a booking." params='[["booking_id","integer","path","Booking ID"]]' response='{"is_paid": false, "status": "Pending"}' %}
+
+<!-- ── AI Endpoints ── -->
+<div class="section-title" id="ai">🤖 AI Endpoints</div>
+
+{% include "aiapp/_endpoint.html" with method="POST" path="/ai/chat/" title="AI Chatbot" auth="Login required" desc="Send a message to the AutoWorld AI assistant." params='[["message","string","required","User message (max 500 chars)"],["history","array","optional","Previous messages [{role, content}]"]]' response='{"response": "AI reply text"}' %}
+
+{% include "aiapp/_endpoint.html" with method="GET" path="/ai/insights/" title="Admin AI Insights" auth="Admin" desc="Get AI-generated operational insights for the admin dashboard." params='[]' response='{"summary": "AI analysis text", "stats": {...}}' %}
+
+{% include "aiapp/_endpoint.html" with method="GET" path="/ai/forecast/data/" title="Demand Forecast" auth="Admin" desc="Get ML demand forecasts for bookings, mechanics, services, and spare parts." params='[]' response='{"weekly_bookings": {...}, "mechanic_demand": [...], "service_demand": [...], "sparepart_demand": [...]}' %}
+
+{% include "aiapp/_endpoint.html" with method="GET" path="/ai/inventory/data/" title="Inventory Analysis" auth="Admin" desc="Get ABC analysis, reorder recommendations, and inventory health score." params='[]' response='{"health": {...}, "abc_analysis": [...], "reorder_recommendations": [...]}' %}
+
+{% include "aiapp/_endpoint.html" with method="GET" path="/ai/rfm/data/" title="RFM Segmentation" auth="Admin" desc="Get customer RFM scores and segment classifications." params='[["segment","string","optional","Filter: Champions|Loyal|At Risk|Lost|New Customer|Potential"]]' response='{"customers": [...], "summary": {...}}' %}
+
+{% include "aiapp/_endpoint.html" with method="GET" path="/ai/evaluation/data/" title="System Metrics" auth="Admin" desc="Get system evaluation KPIs against proposal targets." params='[]' response='{"booking_completion_rate": {...}, "customer_satisfaction": {...}, "overall": {...}}' %}
+
+{% include "aiapp/_endpoint.html" with method="GET" path="/ai/maintenance/data/" title="Maintenance Predictions" auth="Admin" desc="Get list of customers due or overdue for service." params='[]' response='{"predictions": [...], "total": 5}' %}
+
+{% include "aiapp/_endpoint.html" with method="GET" path="/ai/reports/download/{type}/" title="Download PDF Report" auth="Admin" desc="Download a PDF report. Types: bookings, revenue, inventory, job_cards." params='[["type","string","path","Report type"],["days","integer","optional","Days range (default 30)"]]' response="PDF file download" %}
+
+<!-- ── Notifications ── -->
+<div class="section-title" id="notifications">🔔 Notifications</div>
+
+{% include "aiapp/_endpoint.html" with method="GET" path="/api/notifications/" title="Get Notifications" auth="Login required" desc="Get latest 10 notifications and unread count (used by navbar polling)." params='[]' response='{"notifications": [...], "unread_count": 3}' %}
+
+{% include "aiapp/_endpoint.html" with method="POST" path="/notifications/mark-all-read/" title="Mark All Read" auth="Login required" desc="Mark all notifications as read." params='[]' response='{"redirect": "/notifications/"}' %}
+
+<script>
+  function toggleEndpoint(el) {
+    const body = el.nextElementSibling;
+    body.classList.toggle('open');
+  }
+</script>
+{% endblock %}

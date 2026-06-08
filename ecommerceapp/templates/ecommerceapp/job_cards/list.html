@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Job Cards - AutoWorld{% endblock %}
+
+{% block content %}
+<style>
+  .jc-header { background: linear-gradient(135deg,#1e1153,#2d1b8e); border-radius:16px; color:white; padding:2rem; margin-bottom:2rem; }
+  .jc-card { border:none; border-radius:14px; box-shadow:0 4px 16px rgba(30,17,83,.08); transition:transform .2s; }
+  .jc-card:hover { transform:translateY(-3px); }
+  .badge-status { border-radius:8px; padding:.3rem .75rem; font-size:.78rem; font-weight:600; }
+  .badge-Open        { background:#e3f2fd; color:#1565c0; }
+  .badge-In.Progress { background:#fff8e1; color:#f57f17; }
+  .badge-Awaiting    { background:#fce4ec; color:#880e4f; }
+  .badge-Completed   { background:#e8f5e9; color:#2e7d32; }
+  .badge-Cancelled   { background:#f5f5f5; color:#616161; }
+  .badge-Low    { background:#e8f5e9; color:#2e7d32; }
+  .badge-Medium { background:#fff8e1; color:#f57f17; }
+  .badge-High   { background:#fce4ec; color:#c62828; }
+  .badge-Urgent { background:#b71c1c; color:white; }
+  .filter-btn { border-radius:20px; padding:.35rem .9rem; font-size:.82rem; border:2px solid #e0e0e0; background:white; color:#555; cursor:pointer; transition:all .2s; }
+  .filter-btn.active, .filter-btn:hover { background:#1e1153; color:white; border-color:#1e1153; }
+</style>
+
+<div class="jc-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+  <div>
+    <h3 class="fw-bold mb-1">🔧 Job Cards</h3>
+    <p class="mb-0 opacity-75">Track all workshop service records</p>
+  </div>
+  {% if request.user.is_superuser or request.user.groups.all|length %}
+  <a href="{% url 'job_card_create' %}" class="btn btn-light fw-semibold rounded-pill px-4">
+    + New Job Card
+  </a>
+  {% endif %}
+</div>
+
+<!-- Status Filters -->
+<div class="d-flex flex-wrap gap-2 mb-4">
+  <a href="{% url 'job_card_list' %}"
+     class="filter-btn {% if not status_filter %}active{% endif %}">All</a>
+  {% for val, label in status_choices %}
+  <a href="?status={{ val }}"
+     class="filter-btn {% if status_filter == val %}active{% endif %}">{{ label }}</a>
+  {% endfor %}
+</div>
+
+{% if messages %}
+  {% for msg in messages %}
+    <div class="alert alert-{{ msg.tags }} rounded-3">{{ msg }}</div>
+  {% endfor %}
+{% endif %}
+
+{% if job_cards %}
+<div class="row g-3">
+  {% for jc in job_cards %}
+  <div class="col-md-6 col-lg-4">
+    <div class="jc-card card h-100 p-3">
+      <div class="d-flex justify-content-between align-items-start mb-2">
+        <span class="text-muted small fw-semibold">JC-{{ jc.id|stringformat:"04d" }}</span>
+        <div class="d-flex gap-1">
+          <span class="badge-status badge-{{ jc.priority }}">{{ jc.priority }}</span>
+          <span class="badge-status badge-{{ jc.status|cut:' ' }}">{{ jc.status }}</span>
+        </div>
+      </div>
+      <h6 class="fw-bold mb-1" style="color:#1e1153;">{{ jc.title }}</h6>
+      <p class="text-muted small mb-2">{{ jc.description|truncatechars:80 }}</p>
+      <div class="small text-muted mb-1">🚗 {{ jc.vehicle_make }} {{ jc.vehicle_model }}{% if jc.plate_number %} · {{ jc.plate_number }}{% endif %}</div>
+      <div class="small text-muted mb-1">👤 {{ jc.customer.username }}</div>
+      {% if jc.mechanic %}<div class="small text-muted mb-2">🔧 {{ jc.mechanic.name }}</div>{% endif %}
+      <div class="d-flex justify-content-between align-items-center mt-auto pt-2 border-top">
+        <span class="small text-muted">{{ jc.created_at|date:"M d, Y" }}</span>
+        <div class="d-flex gap-1">
+          <a href="{% url 'job_card_detail' jc.id %}" class="btn btn-sm btn-outline-primary rounded-pill px-3">View</a>
+          {% if request.user.is_superuser or request.user.groups.all|length %}
+          <a href="{% url 'job_card_update' jc.id %}" class="btn btn-sm btn-outline-secondary rounded-pill px-3">Edit</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-5 text-muted">
+  <div style="font-size:3rem;">🔧</div>
+  <p class="mt-2">No job cards found.</p>
+  {% if request.user.is_superuser %}
+  <a href="{% url 'job_card_create' %}" class="btn btn-primary rounded-pill px-4">Create First Job Card</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

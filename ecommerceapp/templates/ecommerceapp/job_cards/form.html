@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}{{ action }} Job Card - AutoWorld{% endblock %}
+
+{% block content %}
+<style>
+  .form-header { background:linear-gradient(135deg,#1e1153,#2d1b8e); border-radius:16px; color:white; padding:2rem; margin-bottom:2rem; }
+  .section-title { font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#888; margin-bottom:1rem; }
+  .form-label { font-weight:600; font-size:.9rem; color:#333; }
+</style>
+
+<div class="form-header">
+  <h3 class="fw-bold mb-1">🔧 {{ action }} Job Card</h3>
+  <p class="mb-0 opacity-75">
+    {% if booking %}Linked to Booking #{{ booking.id }} — {{ booking.mechanic.name }}{% else %}New workshop service record{% endif %}
+  </p>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-9">
+    <form method="post">
+      {% csrf_token %}
+
+      <!-- Vehicle Section -->
+      <div class="card border-0 shadow-sm rounded-3 p-4 mb-4">
+        <div class="section-title">🚗 Vehicle Information</div>
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label">Make *</label>
+            {{ form.vehicle_make }}
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Model *</label>
+            {{ form.vehicle_model }}
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">Year</label>
+            {{ form.vehicle_year }}
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">Plate No.</label>
+            {{ form.plate_number }}
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Mileage (km)</label>
+            {{ form.mileage }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Job Details -->
+      <div class="card border-0 shadow-sm rounded-3 p-4 mb-4">
+        <div class="section-title">🔧 Job Details</div>
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label">Job Title *</label>
+            {{ form.title }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Priority</label>
+            {{ form.priority }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Status</label>
+            {{ form.status }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Assigned Mechanic</label>
+            {{ form.mechanic }}
+          </div>
+          <div class="col-12">
+            <label class="form-label">Description *</label>
+            {{ form.description }}
+          </div>
+          <div class="col-12">
+            <label class="form-label">Parts Used</label>
+            {{ form.parts_used }}
+            <div class="form-text">One part per line</div>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Technician Notes</label>
+            {{ form.technician_notes }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Costs -->
+      <div class="card border-0 shadow-sm rounded-3 p-4 mb-4">
+        <div class="section-title">💰 Cost Breakdown</div>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Labour Cost (KES)</label>
+            {{ form.labour_cost }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Parts Cost (KES)</label>
+            {{ form.parts_cost }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Errors -->
+      {% if form.errors %}
+      <div class="alert alert-danger rounded-3">
+        {% for field, errors in form.errors.items %}
+          {% for error in errors %}<div>{{ field }}: {{ error }}</div>{% endfor %}
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="d-flex gap-3">
+        <button type="submit" class="btn btn-primary rounded-pill px-5 fw-semibold">
+          💾 {{ action }} Job Card
+        </button>
+        <a href="{% url 'job_card_list' %}" class="btn btn-outline-secondary rounded-pill px-4">
+          Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

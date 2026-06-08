@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Employees - AutoWorld{% endblock %}
+{% block content %}
+<style>
+  .emp-header { background:linear-gradient(135deg,#1e1153,#2d1b8e); border-radius:16px; color:white; padding:2rem; margin-bottom:2rem; }
+  .emp-card { border:none; border-radius:14px; box-shadow:0 4px 16px rgba(30,17,83,.08); transition:transform .2s; }
+  .emp-card:hover { transform:translateY(-3px); }
+  .avatar { width:52px; height:52px; border-radius:50%; background:#e8f5e9; display:flex; align-items:center; justify-content:center; font-size:1.4rem; font-weight:700; color:#1e1153; flex-shrink:0; }
+</style>
+
+<div class="emp-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+  <div>
+    <h3 class="fw-bold mb-1">👨‍💼 Employees</h3>
+    <p class="mb-0 opacity-75">{{ employees.count }} active staff members</p>
+  </div>
+  <a href="{% url 'attendance_today' %}" class="btn btn-light fw-semibold rounded-pill px-4">
+    📋 Today's Attendance
+  </a>
+</div>
+
+<div class="row g-3">
+  {% for emp in employees %}
+  <div class="col-md-6 col-lg-4">
+    <div class="emp-card card p-3">
+      <div class="d-flex align-items-center gap-3 mb-3">
+        <div class="avatar">{{ emp.name|first|upper }}</div>
+        <div>
+          <div class="fw-bold" style="color:#1e1153;">{{ emp.name }}</div>
+          <div class="text-muted small">{{ emp.position }} · {{ emp.department }}</div>
+        </div>
+      </div>
+      <div class="small text-muted mb-1">📅 Hired: {{ emp.hire_date|date:"M d, Y" }}</div>
+      {% with today_att=emp.attendance_set.all %}
+        {% for att in today_att %}
+          {% if att.date == today %}
+            <div class="small text-success mb-1">✅ Checked in: {{ att.time_in|time:"H:i" }}
+              {% if att.time_out %} · Out: {{ att.time_out|time:"H:i" }}{% endif %}
+            </div>
+          {% endif %}
+        {% endfor %}
+      {% endwith %}
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12 text-center text-muted py-5">No active employees found.</div>
+  {% endfor %}
+</div>
+{% endblock %}

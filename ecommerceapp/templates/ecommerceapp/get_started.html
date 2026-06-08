@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Get Started - AutoWorld{% endblock %}
+
+{% block content %}
+<style>
+  .gs-header { background:linear-gradient(135deg,#1e1153,#2d1b8e); border-radius:20px; color:white; padding:3rem 2rem; margin-bottom:2.5rem; }
+  .gs-card { border:none; border-radius:16px; box-shadow:0 4px 20px rgba(30,17,83,.09); overflow:hidden; transition:transform .2s; }
+  .gs-card:hover { transform:translateY(-5px); }
+  .gs-card .card-img-top { height:180px; object-fit:cover; }
+  .gs-card .card-title { font-weight:700; color:#1e1153; }
+  .info-card { border:none; border-radius:16px; box-shadow:0 4px 16px rgba(30,17,83,.08); padding:1.5rem; height:100%; }
+  .info-card h5 { font-weight:700; color:#1e1153; margin-bottom:1rem; }
+  .info-list { list-style:none; padding:0; margin:0; }
+  .info-list li { padding:.4rem 0; border-bottom:1px solid #f0f0f0; color:#555; font-size:.93rem; }
+  .info-list li:last-child { border-bottom:none; }
+  .info-list li::before { content:"✓ "; color:#11ba1f; font-weight:700; }
+  .section-heading { font-weight:800; color:#1e1153; }
+  .section-sub { color:#888; font-size:.95rem; }
+</style>
+
+<!-- Header -->
+<div class="gs-header text-center">
+  <h2 class="fw-bold mb-2">🚗 Explore AutoWorld</h2>
+  <p class="opacity-75 mb-4">Vehicles, spare parts, and certified mechanics — all in one place</p>
+  <div class="d-flex gap-3 justify-content-center flex-wrap">
+    <a href="{% url 'vehicle_list' %}" class="btn rounded-pill px-4 fw-semibold"
+       style="background:#11ba1f; color:white;">Browse All Vehicles</a>
+    <a href="{% url 'mechanics_list' %}" class="btn btn-outline-light rounded-pill px-4 fw-semibold">
+      Book a Mechanic
+    </a>
+  </div>
+</div>
+
+<!-- Featured Vehicles -->
+{% if vehicles %}
+<div class="mb-5">
+  <h3 class="section-heading mb-1">Featured Vehicles</h3>
+  <p class="section-sub mb-4">A selection of what's available right now</p>
+  <div class="row g-4">
+    {% for vehicle in vehicles|slice:":6" %}
+    <div class="col-md-4">
+      <div class="gs-card card h-100">
+        {% if vehicle.image %}
+          <img src="{{ vehicle.image.url }}" class="card-img-top" alt="{{ vehicle.brand }} {{ vehicle.model }}">
+        {% else %}
+          <div style="height:180px; background:#f4f3ff; display:flex; align-items:center; justify-content:center; font-size:3.5rem;">🚗</div>
+        {% endif %}
+        <div class="card-body">
+          <h6 class="card-title">{{ vehicle.brand }} {{ vehicle.model }} ({{ vehicle.year }})</h6>
+          <p class="text-muted small mb-2">{{ vehicle.description|truncatechars:70 }}</p>
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="fw-bold" style="color:#11ba1f;">KES {{ vehicle.price|floatformat:0 }}</span>
+            <a href="{% url 'vehicle_detail' vehicle.id %}" class="btn btn-sm rounded-pill px-3"
+               style="background:#1e1153; color:white;">View</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="text-center mt-4">
+    <a href="{% url 'vehicle_list' %}" class="btn rounded-pill px-5 fw-semibold"
+       style="background:#1e1153; color:white;">View All Vehicles →</a>
+  </div>
+</div>
+{% endif %}
+
+<!-- Info Cards -->
+<div class="mb-5">
+  <h3 class="section-heading mb-1">What We Offer</h3>
+  <p class="section-sub mb-4">Everything your vehicle needs</p>
+  <div class="row g-4">
+    <div class="col-md-6 col-lg-3">
+      <div class="info-card card">
+        <h5>🚗 Popular Brands</h5>
+        <ul class="info-list">
+          <li>Toyota</li>
+          <li>Mitsubishi</li>
+          <li>Nissan</li>
+          <li>Ford</li>
+          <li>Subaru</li>
+          <li>BMW</li>
+        </ul>
+      </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+      <div class="info-card card">
+        <h5>🔩 Spare Parts</h5>
+        <ul class="info-list">
+          <li>Brake Pads</li>
+          <li>Oil Filters</li>
+          <li>Air Filters</li>
+          <li>Suspension Kits</li>
+          <li>Engine Parts</li>
+          <li>Spark Plugs</li>
+        </ul>
+      </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+      <div class="info-card card">
+        <h5>🧑‍🔧 Partner Mechanics</h5>
+        <p class="text-muted small">We work with certified local mechanics and trusted auto shops to provide top-notch service and maintenance across Kenya.</p>
+        <a href="{% url 'mechanics_list' %}" class="btn btn-sm rounded-pill px-3 mt-2"
+           style="background:#1e1153; color:white;">Find Mechanics</a>
+      </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+      <div class="info-card card">
+        <h5>📦 Fast Delivery</h5>
+        <p class="text-muted small">Our warehouses are strategically located nationwide to guarantee fast delivery of vehicles and spare parts to your door.</p>
+        <a href="{% url 'spareparts_list' %}" class="btn btn-sm rounded-pill px-3 mt-2"
+           style="background:#11ba1f; color:white;">Shop Parts</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CTA -->
+{% if not user.is_authenticated %}
+<div class="text-center py-5 rounded-3 mb-4"
+     style="background:linear-gradient(135deg,#1e1153,#2d1b8e); color:white;">
+  <h4 class="fw-bold mb-2">Ready to get started?</h4>
+  <p class="opacity-75 mb-4">Create a free account to book mechanics, track orders, and more.</p>
+  <a href="{% url 'register' %}" class="btn rounded-pill px-5 fw-bold"
+     style="background:#11ba1f; color:white;">Create Free Account</a>
+</div>
+{% endif %}
+
+{% endblock %}

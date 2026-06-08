@@ -1,0 +1,102 @@
+/* === Global Styles === */
+body {
+  background-color: #1e1153 !important;
+  font-family: 'Segoe UI', sans-serif;
+  margin: 0;
+  color: white;
+}
+
+header {
+  background: #8d0d5a;
+  color: #11ba1f;
+  padding: 2rem;
+  text-align: center;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+}
+
+/* === Workflow Sections === */
+.workflow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 3rem;
+}
+
+.phase {
+  background: #200101;
+  border: 2px solid #5a5e61;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1rem;
+  width: 250px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  transition: transform 0.3s;
+}
+
+.phase:hover {
+  transform: translateY(-5px);
+}
+
+.phase h2 {
+  color: #0a3d62;
+  margin-bottom: 0.5rem;
+}
+
+.phase p {
+  font-size: 0.95rem;
+}
+
+/* === Card Styles (for Vehicle, Spare Part, etc.) === */
+.card {
+  background-color: #2a1870;  /* Slightly lighter purple */
+  border: 2px solid #5a5e61;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  color: white;
+  transition: transform 0.3s;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+.card-title {
+  color: #10de77;
+  font-weight: bold;
+}
+
+.card-text {
+  color: #e8e9ed;
+}
+
+.card-img-top {
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  max-height: 200px;
+  object-fit: cover;
+  width: 100%;
+}
+
+/* === Buttons inside cards === */
+.card .btn {
+  background-color: #11ba1f;
+  color: white;
+  border: none;
+}
+
+.card .btn:hover {
+  background-color: #0fa91c;
+}

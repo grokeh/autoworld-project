@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Delete Job Card - AutoWorld{% endblock %}
+{% block content %}
+<div class="row justify-content-center mt-5">
+  <div class="col-md-5">
+    <div class="card border-0 shadow-sm rounded-3 p-4 text-center">
+      <div style="font-size:3rem;">🗑️</div>
+      <h5 class="fw-bold mt-3">Delete Job Card?</h5>
+      <p class="text-muted">
+        <strong>JC-{{ job_card.id|stringformat:"04d" }}</strong> — {{ job_card.title }}<br>
+        This action cannot be undone.
+      </p>
+      <form method="post" class="d-flex gap-2 justify-content-center mt-3">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger rounded-pill px-4">Yes, Delete</button>
+        <a href="{% url 'job_card_detail' job_card.id %}" class="btn btn-outline-secondary rounded-pill px-4">Cancel</a>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

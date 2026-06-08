@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}My Bookings - AutoWorld{% endblock %}
+
+{% block content %}
+<style>
+  .page-header { background:linear-gradient(135deg,#11ba1f,#0d9e1a); border-radius:16px; color:white; padding:2rem; margin-bottom:2rem; }
+  .booking-card { border:none; border-radius:14px; box-shadow:0 4px 16px rgba(30,17,83,.08); padding:1.25rem; margin-bottom:.75rem; border-left:4px solid #e0e0e0; transition:transform .15s; }
+  .booking-card:hover { transform:translateX(3px); }
+  .booking-card.Pending   { border-left-color:#ffc107; }
+  .booking-card.Approved  { border-left-color:#11ba1f; }
+  .booking-card.Cancelled { border-left-color:#dc3545; }
+  .booking-card.Completed { border-left-color:#0d6efd; }
+  .filter-btn { border-radius:20px; padding:.35rem .9rem; font-size:.82rem; border:2px solid #e0e0e0; background:white; color:#555; cursor:pointer; transition:all .2s; text-decoration:none; }
+  .filter-btn.active, .filter-btn:hover { background:#11ba1f; color:white; border-color:#11ba1f; }
+</style>
+
+<!-- Header -->
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+  <div>
+    <h3 class="fw-bold mb-1">📅 My Bookings</h3>
+    <p class="mb-0 opacity-75">{{ bookings|length }} booking{{ bookings|length|pluralize }} total</p>
+  </div>
+  <a href="{% url 'mechanics_list' %}" class="btn btn-light fw-semibold rounded-pill px-4">
+    + New Booking
+  </a>
+</div>
+
+<!-- Status Filters -->
+<div class="d-flex flex-wrap gap-2 mb-4">
+  <a href="{% url 'customer_booking_history' %}" class="filter-btn {% if not request.GET.status %}active{% endif %}">All</a>
+  <a href="?status=Pending"   class="filter-btn {% if request.GET.status == 'Pending' %}active{% endif %}">Pending</a>
+  <a href="?status=Approved"  class="filter-btn {% if request.GET.status == 'Approved' %}active{% endif %}">Approved</a>
+  <a href="?status=Completed" class="filter-btn {% if request.GET.status == 'Completed' %}active{% endif %}">Completed</a>
+  <a href="?status=Cancelled" class="filter-btn {% if request.GET.status == 'Cancelled' %}active{% endif %}">Cancelled</a>
+</div>
+
+{% if bookings %}
+  {% for booking in bookings %}
+  <div class="booking-card {{ booking.status }}">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+      <div>
+        <div class="fw-bold mb-1" style="color:#1e1153;">{{ booking.mechanic.name }}</div>
+        <div class="text-muted small mb-1">📅 {{ booking.booking_date }} at {{ booking.time }}</div>
+        <div class="text-muted small mb-1">🛠️ {{ booking.service_type }}</div>
+        {% if booking.details %}
+        <div class="text-muted small">📝 {{ booking.details|truncatechars:60 }}</div>
+        {% endif %}
+      </div>
+      <div class="d-flex flex-column align-items-end gap-2">
+        <span class="badge {% if booking.status == 'Approved' %}bg-success{% elif booking.status == 'Pending' %}bg-warning text-dark{% elif booking.status == 'Cancelled' %}bg-danger{% else %}bg-primary{% endif %} rounded-pill px-3">
+          {{ booking.status }}
+        </span>
+        {% if booking.is_paid %}
+          <span class="badge bg-success rounded-pill px-3">✅ Paid</span>
+        {% elif booking.status != 'Cancelled' %}
+          <a href="{% url 'mechanic_payment' %}" class="btn btn-sm btn-outline-success rounded-pill px-3">Pay Now</a>
+        {% endif %}
+        <div class="d-flex gap-1">
+          <a href="{% url 'customer_booking_details' booking.id %}"
+             class="btn btn-sm btn-outline-primary rounded-pill px-3">Details</a>
+          {% if booking.status == 'Pending' %}
+          <a href="{% url 'customer_cancel_booking' booking.id %}"
+             class="btn btn-sm btn-outline-danger rounded-pill px-3"
+             onclick="return confirm('Cancel this booking?')">Cancel</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+{% else %}
+<div class="text-center py-5 text-muted">
+  <div style="font-size:4rem;">📅</div>
+  <h5 class="mt-3">No bookings found</h5>
+  <p>Book a mechanic to get started.</p>
+  <a href="{% url 'mechanics_list' %}" class="btn rounded-pill px-5 fw-semibold"
+     style="background:#11ba1f; color:white;">Find a Mechanic</a>
+</div>
+{% endif %}
+
+{% endblock %}

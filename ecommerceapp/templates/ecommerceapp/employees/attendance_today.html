@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Today's Attendance - AutoWorld{% endblock %}
+{% block content %}
+<style>
+  .att-header { background:linear-gradient(135deg,#1e1153,#2d1b8e); border-radius:16px; color:white; padding:2rem; margin-bottom:2rem; }
+</style>
+
+<div class="att-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+  <div>
+    <h3 class="fw-bold mb-1">📋 Today's Attendance</h3>
+    <p class="mb-0 opacity-75">{{ today|date:"l, F d Y" }}</p>
+  </div>
+  <div class="d-flex gap-3">
+    <div class="text-center">
+      <div class="fw-bold fs-4">{{ records.count }}</div>
+      <div class="small opacity-75">Checked In</div>
+    </div>
+    <div class="text-center">
+      <div class="fw-bold fs-4 text-warning">{{ absent.count }}</div>
+      <div class="small opacity-75">Absent</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Present -->
+  <div class="col-md-7">
+    <h6 class="fw-bold mb-3" style="color:#1e1153;">✅ Present ({{ records.count }})</h6>
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead style="background:#f4f3ff;">
+            <tr>
+              <th style="color:#1e1153;">Employee</th>
+              <th style="color:#1e1153;">Check In</th>
+              <th style="color:#1e1153;">Check Out</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for rec in records %}
+            <tr>
+              <td class="fw-semibold">{{ rec.employee.name }}</td>
+              <td class="text-success">{{ rec.time_in|time:"H:i" }}</td>
+              <td>{% if rec.time_out %}{{ rec.time_out|time:"H:i" }}{% else %}<span class="badge bg-warning text-dark">Still in</span>{% endif %}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3" class="text-center text-muted py-3">No check-ins yet today.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Absent -->
+  <div class="col-md-5">
+    <h6 class="fw-bold mb-3" style="color:#c62828;">❌ Absent ({{ absent.count }})</h6>
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+      <ul class="list-group list-group-flush">
+        {% for emp in absent %}
+        <li class="list-group-item d-flex align-items-center gap-2">
+          <span style="width:36px;height:36px;border-radius:50%;background:#fce4ec;display:flex;align-items:center;justify-content:center;font-weight:700;color:#c62828;">
+            {{ emp.name|first|upper }}
+          </span>
+          <div>
+            <div class="fw-semibold small">{{ emp.name }}</div>
+            <div class="text-muted" style="font-size:.75rem;">{{ emp.department }}</div>
+          </div>
+        </li>
+        {% empty %}
+        <li class="list-group-item text-center text-muted py-3">All employees present! 🎉</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

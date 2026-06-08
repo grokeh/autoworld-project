@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Checkout - AutoWorld{% endblock %}
+
+{% block content %}
+<style>
+  .checkout-header { background:linear-gradient(135deg,#1e1153,#2d1b8e); border-radius:16px; color:white; padding:2rem; margin-bottom:2rem; }
+  .order-item { display:flex; justify-content:space-between; align-items:center; padding:.6rem 0; border-bottom:1px solid #f0f0f0; font-size:.93rem; }
+  .order-item:last-child { border-bottom:none; }
+  .pay-method { border:2px solid #e0e0e0; border-radius:14px; padding:1rem 1.25rem; cursor:pointer; transition:all .2s; margin-bottom:.75rem; }
+  .pay-method:hover { border-color:#1e1153; background:#f8f7ff; }
+  .pay-method.selected { border-color:#1e1153; background:#f4f3ff; }
+  .pay-method .method-icon { font-size:1.5rem; margin-right:.75rem; }
+  .pay-method .method-name { font-weight:600; color:#1e1153; }
+  .pay-method .method-desc { font-size:.78rem; color:#888; }
+  .summary-card { border:none; border-radius:16px; box-shadow:0 4px 20px rgba(30,17,83,.09); padding:1.75rem; position:sticky; top:1rem; }
+  .status-box { border-radius:12px; padding:1rem 1.25rem; display:none; align-items:center; gap:.75rem; font-weight:500; margin-top:1rem; }
+  .status-box.show { display:flex; }
+  .status-box.waiting { background:#fff8e1; color:#856404; border:1px solid #ffc107; }
+  .status-box.success { background:#d1fae5; color:#065f46; border:1px solid #10b981; }
+  .status-box.error   { background:#fee2e2; color:#991b1b; border:1px solid #ef4444; }
+  .spinner-sm { width:1.1rem; height:1.1rem; border:2px solid currentColor; border-right-color:transparent; border-radius:50%; animation:spin .75s linear infinite; flex-shrink:0; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+</style>
+
+<!-- Header -->
+<div class="checkout-header">
+  <h3 class="fw-bold mb-1">🧾 Checkout</h3>
+  <p class="mb-0 opacity-75">Complete your purchase securely</p>
+</div>
+
+{% if cart_items %}
+<div class="row g-4">
+
+  <!-- Payment Methods -->
+  <div class="col-lg-7">
+    <div class="card border-0 shadow-sm rounded-3 p-4 mb-4">
+      <h6 class="fw-bold mb-4" style="color:#1e1153;">💳 Select Payment Method</h6>
+
+      <!-- M-Pesa -->
+      <div class="pay-method" id="method-mpesa" onclick="selectMethod('mpesa')">
+        <div class="d-flex align-items-center">
+          <span class="method-icon">📱</span>
+          <div>
+            <div class="method-name">M-Pesa STK Push</div>
+            <div class="method-desc">Pay via Safaricom M-Pesa — PIN prompt on your phone</div>
+          </div>
+        </div>
+        <div id="mpesa-form" class="mt-3 d-none">
+          <label class="form-label fw-semibold small">M-Pesa Phone Number</label>
+          <div class="input-group">
+            <input type="tel" id="mpesa-phone" class="form-control" placeholder="07XX XXX XXX" maxlength="12">
+            <span class="input-group-text" style="background:#1e1153; color:white; border-color:#1e1153;">+254</span>
+          </div>
+          <div class="status-box waiting" id="mpesa-status">
+            <div class="spinner-sm" id="mpesa-spinner"></div>
+            <span id="mpesa-status-text">Sending payment request...</span>
+          </div>
+          <button type="button" class="btn w-100 rounded-pill fw-bold mt-3"
+                  style="background:#11ba1f; color:white;" onclick="initiateMpesa()">
+            Pay KES {{ total|floatformat:0 }} via M-Pesa
+          </button>
+        </div>
+      </div>
+
+      <!-- Stripe -->
+      <div class="pay-method" id="method-stripe" onclick="selectMethod('stripe')">
+        <div class="d-flex align-items-center">
+          <span class="method-icon">💳</span>
+          <div>
+            <div class="method-name">Card (Stripe)</div>
+            <div class="method-desc">Visa, MasterCard — secure card payment</div>
+          </div>
+        </div>
+        <div id="stripe-form" class="mt-3 d-none">
+          <form action="{% url 'create_checkout_session' %}" method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="order_id" value="{{ order_id }}">
+            <button type="submit" class="btn w-100 rounded-pill fw-bold"
+                    style="background:#1e1153; color:white;">
+              Pay with Stripe →
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- PayPal -->
+      <div class="pay-method" id="method-paypal" onclick="selectMethod('paypal')">
+        <div class="d-flex align-items-center">
+          <span class="method-icon">🅿️</span>
+          <div>
+            <div class="method-name">PayPal</div>
+            <div class="method-desc">Pay in USD via PayPal</div>
+          </div>
+        </div>
+        <div id="paypal-form" class="mt-3 d-none">
+          <div id="paypal-button-container"></div>
+        </div>
+      </div>
+
+      <!-- Cash -->
+      <div class="pay-method" id="method-cash" onclick="selectMethod('cash')">
+        <div class="d-flex align-items-center">
+          <span class="method-icon">💵</span>
+          <div>
+            <div class="method-name">Cash on Delivery</div>
+            <div class="method-desc">Pay when your order arrives</div>
+          </div>
+        </div>
+        <div id="cash-form" class="mt-3 d-none">
+          <form action="{% url 'cash_on_delivery' %}" method="POST">
+            {% csrf_token %}
+            <button type="submit" class="btn w-100 rounded-pill fw-bold btn-outline-secondary">
+              Place Order (Cash on Delivery)
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Order Summary -->
+  <div class="col-lg-5">
+    <div class="summary-card card">
+      <h6 class="fw-bold mb-4" style="color:#1e1153;">📋 Order Summary</h6>
+      {% for item in cart_items %}
+      <div class="order-item">
+        <span class="text-muted small">
+          {% if item.vehicle %}🚗 {{ item.vehicle.brand }} {{ item.vehicle.model }}
+          {% elif item.spare_part %}🔩 {{ item.spare_part.name }}{% endif %}
+          <span class="text-muted">×{{ item.quantity }}</span>
+        </span>
+        <span class="fw-semibold small">KES {{ item.subtotal|floatformat:0 }}</span>
+      </div>
+      {% endfor %}
+      <hr>
+      <div class="d-flex justify-content-between fw-bold" style="color:#1e1153;">
+        <span>Total</span>
+        <span class="text-success" style="font-size:1.2rem;">KES {{ total|floatformat:0 }}</span>
+      </div>
+      <div class="mt-4 text-center text-muted small">
+        <i class="fas fa-shield-alt me-1"></i> Secure checkout powered by AutoWorld
+      </div>
+    </div>
+  </div>
+</div>
+
+{% else %}
+<div class="text-center py-5 text-muted">
+  <div style="font-size:4rem;">🛒</div>
+  <h5 class="mt-3">Your cart is empty</h5>
+  <a href="{% url 'vehicle_list' %}" class="btn rounded-pill px-4 mt-2"
+     style="background:#1e1153; color:white;">Browse Products</a>
+</div>
+{% endif %}
+
+<!-- PayPal SDK -->
+<script src="https://www.paypal.com/sdk/js?client-id={{ PAYPAL_CLIENT_ID|default:'test' }}&currency=USD"></script>
+
+<script>
+  const ORDER_ID = "{{ order_id }}";
+  const TOTAL = {{ total|floatformat:0 }};
+
+  function selectMethod(method) {
+    // Deselect all
+    document.querySelectorAll('.pay-method').forEach(el => el.classList.remove('selected'));
+    document.querySelectorAll('[id$="-form"]').forEach(el => el.classList.add('d-none'));
+    // Select chosen
+    document.getElementById('method-' + method).classList.add('selected');
+    document.getElementById(method + '-form').classList.remove('d-none');
+    // Init PayPal if needed
+    if (method === 'paypal') initPayPal();
+  }
+
+  // M-Pesa
+  function normalizePhone(raw) {
+    raw = raw.replace(/\s+/g, '');
+    if (raw.startsWith('0'))   return '254' + raw.slice(1);
+    if (raw.startsWith('+'))   return raw.slice(1);
+    if (raw.startsWith('254')) return raw;
+    return '254' + raw;
+  }
+
+  function setMpesaStatus(type, msg, spinner=false) {
+    const box = document.getElementById('mpesa-status');
+    box.className = 'status-box show ' + type;
+    document.getElementById('mpesa-status-text').textContent = msg;
+    document.getElementById('mpesa-spinner').style.display = spinner ? 'block' : 'none';
+  }
+
+  async function initiateMpesa() {
+    const raw = document.getElementById('mpesa-phone').value.trim();
+    if (!raw) { setMpesaStatus('error', '⚠️ Enter your M-Pesa phone number.'); return; }
+    const phone = normalizePhone(raw);
+    if (!/^2547\d{8}$|^2541\d{8}$/.test(phone)) {
+      setMpesaStatus('error', '⚠️ Invalid number. Use format 07XX XXX XXX.'); return;
+    }
+    setMpesaStatus('waiting', 'Sending STK push to your phone...', true);
+    try {
+      const resp = await fetch("{% url 'stk_push_payment' %}", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+        body: JSON.stringify({ phone, order_id: ORDER_ID, amount: TOTAL })
+      });
+      const data = await resp.json();
+      if (data.success) {
+        setMpesaStatus('waiting', '📲 Check your phone! Enter your M-Pesa PIN.', true);
+        setTimeout(() => { window.location.href = "{% url 'payment_success' %}"; }, 30000);
+      } else {
+        setMpesaStatus('error', '❌ ' + (data.error || 'Failed. Try again.'));
+      }
+    } catch(e) {
+      setMpesaStatus('error', '❌ Network error. Please try again.');
+    }
+  }
+
+  // PayPal
+  let paypalRendered = false;
+  function initPayPal() {
+    if (paypalRendered) return;
+    paypalRendered = true;
+    paypal.Buttons({
+      createOrder: (data, actions) => actions.order.create({
+        purchase_units: [{ amount: { value: '{{ total }}' } }]
+      }),
+      onApprove: (data, actions) => actions.order.capture().then(() => {
+        window.location.href = "{% url 'payment_success' %}";
+      })
+    }).render('#paypal-button-container');
+  }
+</script>
+{% endblock %}

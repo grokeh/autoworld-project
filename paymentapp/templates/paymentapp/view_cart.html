@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% load static %}
+{% load cart_extras %}
+{% block title %}My Cart - AutoWorld{% endblock %}
+
+{% block content %}
+<style>
+  .cart-header { background:linear-gradient(135deg,#1e1153,#2d1b8e); border-radius:16px; color:white; padding:2rem; margin-bottom:2rem; }
+  .cart-table th { background:#f4f3ff; color:#1e1153; font-weight:600; font-size:.82rem; text-transform:uppercase; letter-spacing:.5px; border:none; }
+  .cart-table td { vertical-align:middle; border-color:#f0f0f0; }
+  .cart-table tbody tr:hover { background:#fafafa; }
+  .product-img { width:48px; height:48px; object-fit:cover; border-radius:10px; background:#f0f0f0; }
+  .product-img-placeholder { width:48px; height:48px; border-radius:10px; background:#f0f0f0; display:flex; align-items:center; justify-content:center; font-size:1.3rem; }
+  .summary-card { border:none; border-radius:16px; box-shadow:0 4px 20px rgba(30,17,83,.09); padding:1.75rem; position:sticky; top:1rem; }
+  .total-row { background:#f4f3ff; font-weight:700; color:#1e1153; }
+</style>
+
+<!-- Header -->
+<div class="cart-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+  <div>
+    <h3 class="fw-bold mb-1">🛒 My Cart</h3>
+    <p class="mb-0 opacity-75">{{ cart_items|length }} item{{ cart_items|length|pluralize }} in your cart</p>
+  </div>
+  <a href="{% url 'clear_cart' %}" class="btn btn-outline-light rounded-pill px-4 fw-semibold"
+     onclick="return confirm('Clear all items from cart?')">🗑 Clear Cart</a>
+</div>
+
+{% if cart_items %}
+<div class="row g-4">
+  <!-- Cart Items -->
+  <div class="col-lg-8">
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+      <div class="table-responsive">
+        <table class="table cart-table mb-0">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Type</th>
+              <th>Unit Price</th>
+              <th>Qty</th>
+              <th>Subtotal</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in cart_items %}
+            <tr>
+              <td>
+                <div class="d-flex align-items-center gap-3">
+                  {% if item.vehicle and item.vehicle.image %}
+                    <img src="{{ item.vehicle.image.url }}" class="product-img" alt="">
+                  {% elif item.spare_part and item.spare_part.image %}
+                    <img src="{{ item.spare_part.image.url }}" class="product-img" alt="">
+                  {% else %}
+                    <div class="product-img-placeholder">
+                      {% if item.vehicle %}🚗{% else %}🔩{% endif %}
+                    </div>
+                  {% endif %}
+                  <div>
+                    <div class="fw-semibold" style="color:#1e1153;">
+                      {% if item.vehicle %}{{ item.vehicle.brand }} {{ item.vehicle.model }}
+                      {% elif item.spare_part %}{{ item.spare_part.name }}{% endif %}
+                    </div>
+                  </div>                </div>
+              </td>
+              <td class="text-muted small">
+                {% if item.vehicle %}Vehicle{% else %}Spare Part{% endif %}
+              </td>
+              <td class="fw-semibold">
+                KES {% if item.vehicle %}{{ item.vehicle.price|floatformat:0 }}
+                {% elif item.spare_part %}{{ item.spare_part.price|floatformat:0 }}{% endif %}
+              </td>
+              <td>{{ item.quantity }}</td>
+              <td class="fw-bold text-success">
+                KES {{ item.subtotal|floatformat:0 }}
+              </td>
+              <td>
+                <a href="{% url 'remove_from_cart' item.id %}"
+                   class="btn btn-sm btn-outline-danger rounded-pill px-2"
+                   onclick="return confirm('Remove this item?')">✕</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr class="total-row">
+              <td colspan="4" class="text-end py-3">Total</td>
+              <td colspan="2" class="py-3">KES {{ total|floatformat:0 }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+    <div class="mt-3 d-flex gap-3">
+      <a href="{% url 'vehicle_list' %}" class="btn btn-outline-secondary rounded-pill px-4">
+        ← Continue Shopping
+      </a>
+    </div>
+  </div>
+
+  <!-- Order Summary -->
+  <div class="col-lg-4">
+    <div class="summary-card card">
+      <h6 class="fw-bold mb-4" style="color:#1e1153;">Order Summary</h6>
+      <div class="d-flex justify-content-between mb-2 text-muted small">
+        <span>Items ({{ cart_items|length }})</span>
+        <span>KES {{ total|floatformat:0 }}</span>
+      </div>
+      <div class="d-flex justify-content-between mb-3 text-muted small">
+        <span>Delivery</span>
+        <span class="text-success">Free</span>
+      </div>
+      <hr>
+      <div class="d-flex justify-content-between fw-bold mb-4" style="color:#1e1153;">
+        <span>Total</span>
+        <span class="text-success" style="font-size:1.2rem;">KES {{ total|floatformat:0 }}</span>
+      </div>
+      <a href="{% url 'checkout' %}" class="btn w-100 rounded-pill fw-bold py-2"
+         style="background:#1e1153; color:white;">
+        Proceed to Checkout →
+      </a>
+    </div>
+  </div>
+</div>
+
+{% else %}
+<div class="text-center py-5 text-muted">
+  <div style="font-size:5rem;">🛒</div>
+  <h5 class="mt-3">Your cart is empty</h5>
+  <p>Add vehicles or spare parts to get started.</p>
+  <div class="d-flex gap-3 justify-content-center mt-3">
+    <a href="{% url 'vehicle_list' %}" class="btn rounded-pill px-4 fw-semibold"
+       style="background:#1e1153; color:white;">Browse Vehicles</a>
+    <a href="{% url 'spareparts_list' %}" class="btn rounded-pill px-4 fw-semibold"
+       style="background:#11ba1f; color:white;">Shop Parts</a>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

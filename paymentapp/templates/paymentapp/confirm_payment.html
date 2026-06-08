@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Confirm Payment - AutoWorld{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card shadow p-4">
+        <h3 class="mb-4">✅ Confirm Payment</h3>
+
+        <p><strong>Customer:</strong> {{ booking.user.username }}</p>
+        <p><strong>Mechanic:</strong> {{ booking.mechanic.name }}</p>
+        <p><strong>Date:</strong> {{ booking.booking_date }}</p>
+        <p><strong>Time:</strong> {{ booking.time }}</p>
+        <p><strong>Booked At:</strong> {{ booking.created_at|date:"M d, Y H:i" }}</p>
+        <p><strong>Current Status:</strong>
+          <span class="badge bg-warning text-dark">{{ booking.status }}</span>
+        </p>
+
+        <form method="post">
+          {% csrf_token %}
+          <p class="text-muted">
+            Confirming this will mark the booking as <strong>Paid & Approved</strong>
+            and notify the customer.
+          </p>
+          <button type="submit" class="btn btn-success w-100">
+            ✅ Confirm Payment Received
+          </button>
+          <a href="{% url 'pending_payments' %}" class="btn btn-outline-secondary w-100 mt-2">
+            Cancel
+          </a>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

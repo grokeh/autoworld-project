@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Vehicles - AutoWorld{% endblock %}
+
+{% block content %}
+<style>
+  .page-header {
+    background: linear-gradient(135deg, #1e1153, #2d1b8e);
+    border-radius: 14px;
+    color: white;
+    padding: 1.5rem 2rem;
+    margin-bottom: 1.5rem;
+  }
+  .page-header h3 { font-size: 1.4rem; font-weight: 700; margin: 0 0 4px; }
+  .page-header p  { font-size: .88rem; opacity: .8; margin: 0; }
+
+  .search-wrap { background: white; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+  .search-wrap .form-control,
+  .search-wrap .form-select { border: 1.5px solid #e0e0e0; border-radius: 8px; font-size: .9rem; }
+  .search-wrap .form-control:focus,
+  .search-wrap .form-select:focus { border-color: #1e1153; box-shadow: none; }
+  .btn-search { background: #1e1153; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: .9rem; padding: .5rem 1.25rem; }
+  .btn-search:hover { background: #2d1b8e; color: white; }
+
+  .v-card { border: none; border-radius: 14px; box-shadow: 0 2px 12px rgba(30,17,83,.08); overflow: hidden; transition: transform .18s, box-shadow .18s; height: 100%; }
+  .v-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(30,17,83,.14); }
+  .v-card-img { height: 180px; object-fit: cover; width: 100%; display: block; }
+  .v-card-placeholder { height: 180px; background: #f0eeff; display: flex; align-items: center; justify-content: center; }
+  .v-card-placeholder svg { width: 56px; height: 56px; opacity: .35; }
+  .v-card-body { padding: 1rem; display: flex; flex-direction: column; }
+  .v-card-title { font-weight: 700; color: #1e1153; font-size: .95rem; margin: 0 0 2px; }
+  .v-card-year  { font-size: .78rem; color: #999; margin: 0 0 6px; }
+  .v-card-price { font-weight: 800; color: #11ba1f; font-size: 1rem; margin: 0 0 6px; }
+  .v-card-desc  { font-size: .8rem; color: #777; margin: 0 0 12px; flex-grow: 1; }
+  .v-card-actions { display: flex; gap: 8px; margin-top: auto; }
+  .btn-view { flex: 1; background: #1e1153; color: white; border: none; border-radius: 8px; font-size: .82rem; font-weight: 600; padding: .45rem .75rem; text-align: center; text-decoration: none; }
+  .btn-view:hover { background: #2d1b8e; color: white; }
+  .btn-cart { background: #11ba1f; color: white; border: none; border-radius: 8px; font-size: .82rem; font-weight: 600; padding: .45rem .75rem; cursor: pointer; }
+  .btn-cart:hover { background: #0d9e1a; }
+
+  .empty-state { text-align: center; padding: 4rem 1rem; color: #aaa; }
+  .empty-state h5 { color: #555; margin-top: 1rem; }
+</style>
+
+<!-- Header -->
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h3>Available Vehicles</h3>
+    <p>{{ vehicles.count }} vehicle{{ vehicles.count|pluralize }} found</p>
+  </div>
+  {% if user.is_staff %}
+  <a href="{% url 'manage_inventory' %}" class="btn btn-outline-light btn-sm rounded-pill px-3">Manage Inventory</a>
+  {% endif %}
+</div>
+
+<!-- Search -->
+<div class="search-wrap">
+  <form method="get">
+    <div class="row g-2 align-items-center">
+      <div class="col-12 col-sm-5">
+        <input type="text" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Search brand or model...">
+      </div>
+      <div class="col-6 col-sm-2">
+        <input type="number" name="min_year" value="{{ request.GET.min_year }}" class="form-control" placeholder="Min Year">
+      </div>
+      <div class="col-6 col-sm-2">
+        <input type="number" name="max_year" value="{{ request.GET.max_year }}" class="form-control" placeholder="Max Year">
+      </div>
+      <div class="col-6 col-sm-2">
+        <button type="submit" class="btn-search w-100">Search</button>
+      </div>
+      {% if request.GET.q or request.GET.min_year or request.GET.max_year %}
+      <div class="col-6 col-sm-1">
+        <a href="{% url 'vehicle_list' %}" class="btn btn-outline-secondary w-100 btn-sm">Clear</a>
+      </div>
+      {% endif %}
+    </div>
+  </form>
+</div>
+
+<!-- Grid -->
+{% if vehicles %}
+<div class="row row-cols-2 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
+  {% for vehicle in vehicles %}
+  <div class="col">
+    <div class="v-card card">
+      {% if vehicle.image %}
+        <img src="{{ vehicle.image.url }}" class="v-card-img" alt="{{ vehicle.brand }} {{ vehicle.model }}">
+      {% else %}
+        <div class="v-card-placeholder">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#1e1153" stroke-width="1.5">
+            <path d="M5 17H3a2 2 0 01-2-2v-4l2-5h14l2 5v4a2 2 0 01-2 2h-2M5 17a2 2 0 104 0m6 0a2 2 0 104 0"/>
+          </svg>
+        </div>
+      {% endif %}
+      <div class="v-card-body">
+        <div class="v-card-title">{{ vehicle.brand }} {{ vehicle.model }}</div>
+        <div class="v-card-year">{{ vehicle.year }}</div>
+        <div class="v-card-price">KES {{ vehicle.price|floatformat:0 }}</div>
+        <div class="v-card-desc">{{ vehicle.description|truncatechars:55 }}</div>
+        <div class="v-card-actions">
+          <a href="{% url 'vehicle_detail' vehicle.id %}" class="btn-view">View</a>
+          {% if user.is_authenticated and not user.is_staff %}
+          <form method="post" action="{% url 'add_to_cart' 'vehicle' vehicle.id %}" style="margin:0;">
+            {% csrf_token %}
+            <button type="submit" class="btn-cart" title="Add to Cart">+Cart</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5">
+    <path d="M5 17H3a2 2 0 01-2-2v-4l2-5h14l2 5v4a2 2 0 01-2 2h-2M5 17a2 2 0 104 0m6 0a2 2 0 104 0"/>
+  </svg>
+  <h5>No vehicles found</h5>
+  <p>Try adjusting your search filters.</p>
+  <a href="{% url 'vehicle_list' %}" class="btn btn-sm rounded-pill px-4" style="background:#1e1153;color:white;">Clear Filters</a>
+</div>
+{% endif %}
+{% endblock %}

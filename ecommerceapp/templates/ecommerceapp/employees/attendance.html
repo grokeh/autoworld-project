@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}My Attendance - AutoWorld{% endblock %}
+{% block content %}
+<style>
+  .att-header { background:linear-gradient(135deg,#1e1153,#2d1b8e); border-radius:16px; color:white; padding:2rem; margin-bottom:2rem; }
+</style>
+
+<div class="att-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+  <div>
+    <h3 class="fw-bold mb-1">📋 My Attendance</h3>
+    <p class="mb-0 opacity-75">Last 30 records for {{ employee.name }}</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'attendance_checkin' %}" class="btn btn-success rounded-pill px-4 fw-semibold">✅ Check In</a>
+    <a href="{% url 'attendance_checkout' %}" class="btn btn-outline-light rounded-pill px-4 fw-semibold">👋 Check Out</a>
+  </div>
+</div>
+
+{% if messages %}
+  {% for msg in messages %}
+    <div class="alert alert-{{ msg.tags }} rounded-3">{{ msg }}</div>
+  {% endfor %}
+{% endif %}
+
+<div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+  <div class="table-responsive">
+    <table class="table mb-0">
+      <thead style="background:#f4f3ff;">
+        <tr>
+          <th style="color:#1e1153;">Date</th>
+          <th style="color:#1e1153;">Check In</th>
+          <th style="color:#1e1153;">Check Out</th>
+          <th style="color:#1e1153;">Hours</th>
+          <th style="color:#1e1153;">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for rec in records %}
+        <tr>
+          <td class="fw-semibold">{{ rec.date|date:"D, M d Y" }}</td>
+          <td>{{ rec.time_in|time:"H:i" }}</td>
+          <td>{% if rec.time_out %}{{ rec.time_out|time:"H:i" }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+          <td>
+            {% if rec.time_out %}
+              {% with h=rec.time_in i=rec.time_out %}
+                <span class="text-success fw-semibold">Present</span>
+              {% endwith %}
+            {% else %}
+              <span class="text-warning">In progress</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if rec.time_out %}
+              <span class="badge bg-success">Complete</span>
+            {% else %}
+              <span class="badge bg-warning text-dark">Checked In</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-center text-muted py-4">No attendance records yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

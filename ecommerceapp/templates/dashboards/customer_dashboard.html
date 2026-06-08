@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}My Dashboard - AutoWorld{% endblock %}
+
+{% block content %}
+<style>
+  .cust-header { background:linear-gradient(135deg,#11ba1f,#0d9e1a); border-radius:16px; color:white; padding:2rem; margin-bottom:2rem; }
+  .quick-link { border:none; border-radius:14px; box-shadow:0 4px 16px rgba(30,17,83,.08); padding:1.5rem; text-align:center; text-decoration:none; color:#1e1153; transition:transform .2s; display:block; }
+  .quick-link:hover { transform:translateY(-3px); color:#1e1153; }
+  .quick-link .icon { font-size:2rem; margin-bottom:.5rem; }
+  .stat-card { border:none; border-radius:14px; box-shadow:0 4px 16px rgba(30,17,83,.08); padding:1.25rem 1.5rem; }
+  .booking-item { border:none; border-radius:12px; box-shadow:0 2px 8px rgba(30,17,83,.07); padding:1rem 1.25rem; margin-bottom:.75rem; border-left:4px solid #e0e0e0; }
+  .booking-item.Pending   { border-left-color:#ffc107; }
+  .booking-item.Approved  { border-left-color:#11ba1f; }
+  .booking-item.Cancelled { border-left-color:#dc3545; }
+  .booking-item.Completed { border-left-color:#0d6efd; }
+</style>
+
+<!-- Header -->
+<div class="cust-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+  <div>
+    <div class="small opacity-75 mb-1">🙋 Customer</div>
+    <h3 class="fw-bold mb-1">My AutoWorld</h3>
+    <p class="mb-0 opacity-75">Welcome back, {{ user.first_name|default:user.username }}!</p>
+  </div>
+  <a href="{% url 'mechanics_list' %}" class="btn btn-light fw-semibold rounded-pill px-4">
+    + Book a Mechanic
+  </a>
+</div>
+
+<!-- Quick Links -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <a href="{% url 'mechanics_list' %}" class="quick-link card">
+      <div class="icon">🧑‍🔧</div><div class="fw-semibold small">Book Mechanic</div>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a href="{% url 'vehicle_list' %}" class="quick-link card">
+      <div class="icon">🚗</div><div class="fw-semibold small">Browse Vehicles</div>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a href="{% url 'spareparts_list' %}" class="quick-link card">
+      <div class="icon">🔩</div><div class="fw-semibold small">Spare Parts</div>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a href="{% url 'view_cart' %}" class="quick-link card">
+      <div class="icon">🛒</div><div class="fw-semibold small">My Cart</div>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a href="{% url 'customer_booking_history' %}" class="quick-link card">
+      <div class="icon">📅</div><div class="fw-semibold small">My Bookings</div>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a href="{% url 'notifications' %}" class="quick-link card">
+      <div class="icon">🔔</div><div class="fw-semibold small">Notifications</div>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a href="{% url 'recommendation' %}" class="quick-link card">
+      <div class="icon">🔍</div><div class="fw-semibold small">Smart Finder</div>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a href="{% url 'home' %}" class="quick-link card">
+      <div class="icon">🏠</div><div class="fw-semibold small">Home</div>
+    </a>
+  </div>
+</div>
+
+<!-- Recent Bookings -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h6 class="fw-bold mb-0" style="color:#1e1153;">📅 Recent Bookings</h6>
+  <a href="{% url 'customer_booking_history' %}" class="text-muted small text-decoration-none">View all →</a>
+</div>
+
+{% with bookings=request.user.booking_set.all|slice:":5" %}
+{% if bookings %}
+  {% for booking in bookings %}
+  <div class="booking-item {{ booking.status }}">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+      <div>
+        <div class="fw-semibold" style="color:#1e1153;">{{ booking.mechanic.name }}</div>
+        <div class="text-muted small">📅 {{ booking.booking_date }} at {{ booking.time }}</div>
+        <div class="text-muted small">🛠️ {{ booking.service_type }}</div>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge {% if booking.status == 'Approved' %}bg-success{% elif booking.status == 'Pending' %}bg-warning text-dark{% elif booking.status == 'Cancelled' %}bg-danger{% else %}bg-primary{% endif %} rounded-pill">
+          {{ booking.status }}
+        </span>
+        {% if booking.is_paid %}
+          <span class="badge bg-success rounded-pill">✅ Paid</span>
+        {% else %}
+          <a href="{% url 'mechanic_payment' %}" class="btn btn-sm btn-outline-success rounded-pill px-2">Pay</a>
+        {% endif %}
+        <a href="{% url 'customer_booking_details' booking.id %}" class="btn btn-sm btn-outline-primary rounded-pill px-2">Details</a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+{% else %}
+  <div class="text-center py-4 text-muted">
+    <div style="font-size:2.5rem;">📅</div>
+    <p class="mt-2 mb-3">No bookings yet.</p>
+    <a href="{% url 'mechanics_list' %}" class="btn rounded-pill px-4 fw-semibold"
+       style="background:#11ba1f; color:white;">Book a Mechanic</a>
+  </div>
+{% endif %}
+{% endwith %}
+
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends "base_login.html" %}
+
+{% block title %}Logged Out - AutoWorld{% endblock %}
+
+{% block content %}
+  <h1 class="mb-4">You have been logged out</h1>
+  <p>You have successfully logged out of your account.</p>
+  
+  <a href="{% url 'login' %}" class="btn btn-primary mt-3">Login Again</a>
+{% endblock %}

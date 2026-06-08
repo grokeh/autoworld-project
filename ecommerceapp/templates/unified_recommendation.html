@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+{% load static %}
+{% load form_tags %}
+{% block title %}Smart Finder - AutoWorld{% endblock %}
+
+{% block content %}
+<style>
+  .sf-header { background:linear-gradient(135deg,#1e1153,#2d1b8e); border-radius:16px; color:white; padding:2rem; margin-bottom:2rem; }
+  .filter-card { border:none; border-radius:16px; box-shadow:0 4px 16px rgba(30,17,83,.08); padding:1.75rem; margin-bottom:2rem; }
+  .form-control, .form-select { border-radius:10px; border:2px solid #e0e0e0; padding:.6rem 1rem; transition:border-color .2s; }
+  .form-control:focus, .form-select:focus { border-color:#1e1153; box-shadow:none; }
+  .form-label { font-weight:600; font-size:.88rem; color:#555; }
+  .result-card { border:none; border-radius:16px; box-shadow:0 4px 20px rgba(30,17,83,.09); overflow:hidden; transition:transform .2s; }
+  .result-card:hover { transform:translateY(-4px); }
+  .result-card .card-img-top { height:170px; object-fit:cover; }
+  .result-card .card-title { font-weight:700; color:#1e1153; font-size:.95rem; }
+  .result-card .price { font-weight:800; color:#11ba1f; }
+  .section-heading { font-weight:800; color:#1e1153; border-left:4px solid #11ba1f; padding-left:.75rem; }
+  .cat-btn { border-radius:20px; padding:.4rem 1.1rem; font-size:.85rem; font-weight:600; border:2px solid #e0e0e0; background:white; color:#555; cursor:pointer; transition:all .2s; }
+  .cat-btn.active, .cat-btn:hover { background:#1e1153; color:white; border-color:#1e1153; }
+  .empty-state { text-align:center; padding:3rem 1rem; color:#888; }
+</style>
+
+<!-- Header -->
+<div class="sf-header">
+  <h3 class="fw-bold mb-1">🔍 Smart Finder</h3>
+  <p class="mb-0 opacity-75">Find the right vehicle, spare part, or mechanic for your needs</p>
+</div>
+
+<!-- Filter Form -->
+<div class="filter-card card">
+  <form method="get" id="recommendation-form">
+    <!-- Category Tabs -->
+    <div class="d-flex gap-2 flex-wrap mb-4">
+      <button type="button" class="cat-btn {% if not form.category.value or form.category.value == 'vehicle' %}active{% endif %}"
+              onclick="setCategory('vehicle')">🚗 Vehicles</button>
+      <button type="button" class="cat-btn {% if form.category.value == 'sparepart' %}active{% endif %}"
+              onclick="setCategory('sparepart')">🔩 Spare Parts</button>
+      <button type="button" class="cat-btn {% if form.category.value == 'mechanic' %}active{% endif %}"
+              onclick="setCategory('mechanic')">🧑‍🔧 Mechanics</button>
+    </div>
+
+    <input type="hidden" name="category" id="category-input"
+           value="{{ form.category.value|default:'vehicle' }}">
+
+    <!-- Vehicle Fields -->
+    <div id="vehicle-fields" class="row g-3 category-fields">
+      <div class="col-md-3">
+        <label class="form-label">Brand</label>
+        {{ form.brand|add_class:"form-control" }}
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Min Year</label>
+        {{ form.min_year|add_class:"form-control" }}
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Max Price (KES)</label>
+        {{ form.max_price|add_class:"form-control" }}
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Keywords</label>
+        {{ form.keywords|add_class:"form-control" }}
+      </div>
+    </div>
+
+    <!-- Spare Part Fields -->
+    <div id="sparepart-fields" class="row g-3 category-fields d-none">
+      <div class="col-md-6">
+        <label class="form-label">Part Name / Keywords</label>
+        {{ form.keywords|add_class:"form-control" }}
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Compatible Vehicle</label>
+        {{ form.compatible_vehicle|add_class:"form-control" }}
+      </div>
+    </div>
+
+    <!-- Mechanic Fields -->
+    <div id="mechanic-fields" class="row g-3 category-fields d-none">
+      <div class="col-md-6">
+        <label class="form-label">Location</label>
+        {{ form.location|add_class:"form-control" }}
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Specialization</label>
+        {{ form.specialization|add_class:"form-control" }}
+      </div>
+    </div>
+
+    <div class="mt-4 d-flex gap-2">
+      <button type="submit" class="btn rounded-pill px-5 fw-semibold"
+              style="background:#1e1153; color:white;">Search</button>
+      {% if request.GET %}
+      <a href="{% url 'recommendation' %}" class="btn btn-outline-secondary rounded-pill px-4">Clear</a>
+      {% endif %}
+    </div>
+  </form>
+</div>
+
+<!-- Results -->
+{% if vehicles %}
+<h5 class="section-heading mb-3">🚗 Vehicle Matches ({{ vehicles|length }})</h5>
+<div class="row g-4 mb-5">
+  {% for v in vehicles %}
+  <div class="col-md-4 col-lg-3">
+    <div class="result-card card h-100">
+      {% if v.image %}
+        <img src="{{ v.image.url }}" class="card-img-top" alt="{{ v.brand }} {{ v.model }}">
+      {% else %}
+        <div style="height:170px; background:#f4f3ff; display:flex; align-items:center; justify-content:center; font-size:3rem;">🚗</div>
+      {% endif %}
+      <div class="card-body">
+        <h6 class="card-title">{{ v.brand }} {{ v.model }} ({{ v.year }})</h6>
+        <div class="price mb-2">KES {{ v.price|floatformat:0 }}</div>
+        <p class="text-muted small mb-3">{{ v.description|truncatechars:60 }}</p>
+        <a href="{% url 'vehicle_detail' v.id %}" class="btn btn-sm rounded-pill w-100 fw-semibold"
+           style="background:#1e1153; color:white;">View Details</a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if spareparts %}
+<h5 class="section-heading mb-3">🔩 Spare Part Matches ({{ spareparts|length }})</h5>
+<div class="row g-4 mb-5">
+  {% for s in spareparts %}
+  <div class="col-md-4 col-lg-3">
+    <div class="result-card card h-100">
+      {% if s.image %}
+        <img src="{{ s.image.url }}" class="card-img-top" alt="{{ s.name }}">
+      {% else %}
+        <div style="height:170px; background:#f4f3ff; display:flex; align-items:center; justify-content:center; font-size:3rem;">🔩</div>
+      {% endif %}
+      <div class="card-body">
+        <h6 class="card-title">{{ s.name }}</h6>
+        <div class="price mb-1">KES {{ s.price|floatformat:0 }}</div>
+        <div class="text-muted small mb-2">{{ s.compatible_vehicle }}</div>
+        {% if user.is_authenticated and not user.is_staff %}
+        <form method="post" action="{% url 'add_to_cart' 'sparepart' s.id %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-sm rounded-pill w-100 fw-semibold"
+                  style="background:#11ba1f; color:white;">🛒 Add to Cart</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if mechanics %}
+<h5 class="section-heading mb-3">🧑‍🔧 Mechanic Matches ({{ mechanics|length }})</h5>
+<div class="row g-4 mb-5">
+  {% for m in mechanics %}
+  <div class="col-md-4 col-lg-3">
+    <div class="result-card card h-100">
+      {% if m.profile_pic %}
+        <img src="{{ m.profile_pic.url }}" class="card-img-top" alt="{{ m.name }}">
+      {% else %}
+        <div style="height:170px; background:#fff3e0; display:flex; align-items:center; justify-content:center; font-size:3rem;">🧑‍🔧</div>
+      {% endif %}
+      <div class="card-body">
+        <h6 class="card-title">{{ m.name }}</h6>
+        <div class="text-muted small mb-1">{{ m.specialization }}</div>
+        <div class="text-muted small mb-3">📍 {{ m.location }}</div>
+        {% if user.is_authenticated and not user.is_staff %}
+        <a href="{% url 'book_mechanic' m.id %}" class="btn btn-sm rounded-pill w-100 fw-semibold"
+           style="background:#fd7e14; color:white;">📅 Book Now</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if request.GET and not vehicles and not spareparts and not mechanics %}
+<div class="empty-state">
+  <div style="font-size:3.5rem;">🔍</div>
+  <h5 class="mt-3">No matches found</h5>
+  <p>Try adjusting your filters or search terms.</p>
+</div>
+{% endif %}
+
+<script>
+  function setCategory(cat) {
+    document.getElementById('category-input').value = cat;
+    document.querySelectorAll('.category-fields').forEach(el => el.classList.add('d-none'));
+    document.getElementById(cat + '-fields').classList.remove('d-none');
+    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+  }
+
+  // Init on load
+  document.addEventListener('DOMContentLoaded', function() {
+    const cat = document.getElementById('category-input').value || 'vehicle';
+    document.querySelectorAll('.category-fields').forEach(el => el.classList.add('d-none'));
+    const el = document.getElementById(cat + '-fields');
+    if (el) el.classList.remove('d-none');
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends "aiapp/emails/base_email.html" %}
+{% block content %}
+<h2>Booking Confirmed! 📅</h2>
+<p>Hi {{ booking.user.first_name|default:booking.user.username }}, your booking has been received and is awaiting confirmation from the mechanic.</p>
+
+<div class="info-box">
+  <div class="info-row">
+    <span class="info-label">Mechanic</span>
+    <span class="info-value">{{ booking.mechanic.name }}</span>
+  </div>
+  <div class="info-row">
+    <span class="info-label">Specialization</span>
+    <span class="info-value">{{ booking.mechanic.specialization }}</span>
+  </div>
+  <div class="info-row">
+    <span class="info-label">Date</span>
+    <span class="info-value">{{ booking.booking_date }}</span>
+  </div>
+  <div class="info-row">
+    <span class="info-label">Time</span>
+    <span class="info-value">{{ booking.time }}</span>
+  </div>
+  <div class="info-row">
+    <span class="info-label">Service</span>
+    <span class="info-value">{{ booking.service_type }}</span>
+  </div>
+  {% if booking.details %}
+  <div class="info-row">
+    <span class="info-label">Details</span>
+    <span class="info-value">{{ booking.details }}</span>
+  </div>
+  {% endif %}
+  <div class="info-row">
+    <span class="info-label">Booking #</span>
+    <span class="info-value">#{{ booking.id }}</span>
+  </div>
+</div>
+
+{% if not booking.is_paid %}
+<p>⚠️ <strong>Action required:</strong> Please complete your deposit payment to confirm your slot.</p>
+<div style="text-align:center; margin:20px 0;">
+  <a href="{{ site_url }}/paymentapp/mechanic-payment/" class="btn">Pay Deposit Now</a>
+</div>
+{% else %}
+<p>✅ Your deposit has been paid. We'll notify you once the mechanic confirms.</p>
+{% endif %}
+
+<div style="text-align:center; margin:16px 0;">
+  <a href="{{ site_url }}/customer/booking-history/" class="btn-outline">View My Bookings</a>
+</div>
+{% endblock %}

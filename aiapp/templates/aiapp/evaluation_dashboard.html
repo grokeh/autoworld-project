@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}System Evaluation - AutoWorld{% endblock %}
+
+{% block content %}
+<style>
+  .eval-header { background:linear-gradient(135deg,#1e1153,#2d1b8e); border-radius:16px; color:white; padding:2rem; margin-bottom:2rem; }
+  .metric-card { border:none; border-radius:14px; box-shadow:0 4px 16px rgba(30,17,83,.08); padding:1.5rem; height:100%; }
+  .metric-card h6 { font-weight:700; color:#1e1153; font-size:.82rem; text-transform:uppercase; letter-spacing:.5px; }
+  .metric-value { font-size:2.2rem; font-weight:800; }
+  .metric-good    { color:#11ba1f; }
+  .metric-warning { color:#fd7e14; }
+  .metric-poor    { color:#dc3545; }
+  .progress-bar-wrap { background:#f4f3ff; border-radius:8px; height:10px; overflow:hidden; margin:.5rem 0; }
+  .progress-bar-fill { height:100%; border-radius:8px; transition:width 1s ease; }
+  .fill-good    { background:linear-gradient(90deg,#11ba1f,#0d9e1a); }
+  .fill-warning { background:linear-gradient(90deg,#fd7e14,#e65c00); }
+  .fill-poor    { background:linear-gradient(90deg,#dc3545,#b52a36); }
+  .target-line { font-size:.75rem; color:#888; }
+  .grade-circle { width:100px; height:100px; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; margin:0 auto 1rem; font-weight:800; }
+  .grade-A { background:linear-gradient(135deg,#11ba1f,#0d9e1a); color:white; }
+  .grade-B { background:linear-gradient(135deg,#fd7e14,#e65c00); color:white; }
+  .grade-C { background:linear-gradient(135deg,#ffc107,#e0a800); color:white; }
+  .grade-D { background:linear-gradient(135deg,#dc3545,#b52a36); color:white; }
+</style>
+
+<div class="eval-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+  <div>
+    <h3 class="fw-bold mb-1">📊 System Evaluation Metrics</h3>
+    <p class="mb-0 opacity-75">KPI measurement against proposal targets</p>
+  </div>
+  <div class="d-flex gap-2">
+    <button class="btn btn-outline-light rounded-pill px-4 fw-semibold" onclick="loadMetrics()">↻ Refresh</button>
+    <a href="{% url 'dashboard' %}" class="btn btn-light rounded-pill px-4 fw-semibold">← Dashboard</a>
+  </div>
+</div>
+
+<div id="eval-loading" class="text-center py-5 text-muted">
+  <div style="font-size:3rem;">📊</div>
+  <p class="mt-2">Calculating system metrics...</p>
+</div>
+
+<div id="eval-content" style="display:none;">
+
+  <!-- Overall Score -->
+  <div class="row g-4 mb-4">
+    <div class="col-md-3">
+      <div class="metric-card card text-center">
+        <h6>Overall System Score</h6>
+        <div class="grade-circle grade-A" id="grade-circle">
+          <div style="font-size:1.8rem;" id="overall-score">—</div>
+          <div style="font-size:.7rem; opacity:.85;">Grade <span id="overall-grade">—</span></div>
+        </div>
+        <p class="text-muted small mb-0">Weighted across all KPIs</p>
+      </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="col-md-9">
+      <div class="row g-3" id="kpi-cards"></div>
+    </div>
+  </div>
+
+  <!-- Weekly Trend Chart -->
+  <div class="metric-card card mb-4">
+    <h6 class="mb-3">📈 Weekly Booking Trend</h6>
+    <canvas id="trend-chart" height="80"></canvas>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+async function loadMetrics() {
+  document.getElementById('eval-loading').style.display = 'block';
+  document.getElementById('eval-content').style.display = 'none';
+  try {
+    const r = await fetch("{% url 'evaluation_api' %}");
+    const d = await r.json();
+    renderOverall(d.overall);
+    renderKPIs(d);
+    renderTrend(d.weekly_trend);
+    document.getElementById('eval-loading').style.display = 'none';
+    document.getElementById('eval-content').style.display = 'block';
+  } catch(e) {
+    document.getElementById('eval-loading').innerHTML =
+      '<div style="font-size:2rem;">⚠️</div><p class="text-danger mt-2">Failed to load metrics.</p>';
+  }
+}
+
+function renderOverall(o) {
+  document.getElementById('overall-score').textContent = o.score + '%';
+  document.getElementById('overall-grade').textContent = o.grade;
+  const circle = document.getElementById('grade-circle');
+  circle.className = 'grade-circle grade-' + o.grade;
+}
+
+function renderKPIs(d) {
+  const keys = ['booking_completion_rate','payment_success_rate','customer_satisfaction',
+                 'inventory_accuracy','mechanic_utilisation'];
+  const labels = {
+    booking_completion_rate: '📅 Booking Completion',
+    payment_success_rate: '💳 Payment Success',
+    customer_satisfaction: '⭐ Customer Satisfaction',
+    inventory_accuracy: '📦 Inventory Accuracy',
+    mechanic_utilisation: '🧑‍🔧 Mechanic Utilisation',
+  };
+  const el = document.getElementById('kpi-cards');
+  el.innerHTML = keys.map(k => {
+    const m = d[k];
+    if (!m) return '';
+    const pct = m.pct !== undefined ? m.pct : m.value;
+    const target_pct = k === 'customer_satisfaction' ? m.target * 20 : m.target;
+    return `
+    <div class="col-md-6">
+      <div class="metric-card card">
+        <h6>${labels[k]}</h6>
+        <div class="d-flex align-items-end gap-2">
+          <span class="metric-value metric-${m.status}">${m.value}${m.unit}</span>
+          <span class="text-muted small mb-2">target: ${m.target}${m.unit}</span>
+        </div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill fill-${m.status}" style="width:${Math.min(pct,100)}%"></div>
+        </div>
+        <div class="text-muted small">${m.description}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderTrend(weeks) {
+  if (!weeks) return;
+  const ctx = document.getElementById('trend-chart').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: weeks.map(w => w.week),
+      datasets: [{
+        label: 'Bookings',
+        data: weeks.map(w => w.count),
+        borderColor: '#1e1153',
+        backgroundColor: 'rgba(30,17,83,.08)',
+        borderWidth: 2,
+        tension: 0.35,
+        fill: true,
+        pointRadius: 5,
+        pointBackgroundColor: '#11ba1f',
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', loadMetrics);
+</script>
+{% endblock %}

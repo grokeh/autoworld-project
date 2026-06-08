@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Employee Dashboard - AutoWorld{% endblock %}
+
+{% block content %}
+<style>
+  .emp-dash-header { background:linear-gradient(135deg,#1e1153,#2d1b8e); border-radius:16px; color:white; padding:2rem; margin-bottom:2rem; }
+  .stat-card { border:none; border-radius:14px; box-shadow:0 4px 16px rgba(30,17,83,.08); padding:1.25rem 1.5rem; }
+  .quick-link { border:none; border-radius:14px; box-shadow:0 4px 16px rgba(30,17,83,.08); padding:1.5rem; text-align:center; text-decoration:none; color:#1e1153; transition:transform .2s; display:block; }
+  .quick-link:hover { transform:translateY(-3px); color:#1e1153; }
+  .quick-link .icon { font-size:2rem; margin-bottom:.5rem; }
+</style>
+
+<!-- Header -->
+<div class="emp-dash-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+  <div>
+    <h3 class="fw-bold mb-1">👨‍💼 Employee Dashboard</h3>
+    <p class="mb-0 opacity-75">Welcome back, {{ user.first_name|default:user.username }}!</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'attendance_checkin' %}" class="btn btn-success rounded-pill px-4 fw-semibold">
+      ✅ Check In
+    </a>
+    <a href="{% url 'attendance_checkout' %}" class="btn btn-outline-light rounded-pill px-4 fw-semibold">
+      👋 Check Out
+    </a>
+  </div>
+</div>
+
+{% if messages %}
+  {% for msg in messages %}
+    <div class="alert alert-{{ msg.tags }} rounded-3">{{ msg }}</div>
+  {% endfor %}
+{% endif %}
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card card text-center">
+      <div class="text-muted small">Total Employees</div>
+      <div class="fw-bold fs-3" style="color:#1e1153;">{{ total_employees }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card card text-center">
+      <div class="text-muted small">Check-ins Today</div>
+      <div class="fw-bold fs-3 text-success">{{ today_checkins }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card card text-center">
+      <div class="text-muted small">Active Shifts</div>
+      <div class="fw-bold fs-3 text-warning">{{ active_shifts }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card card text-center">
+      <div class="text-muted small">My Status</div>
+      <div class="fw-bold fs-6 mt-1">
+        {% if checked_in %}
+          <span class="badge bg-success">Checked In</span>
+        {% else %}
+          <span class="badge bg-secondary">Not Checked In</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Links -->
+<h6 class="fw-bold mb-3" style="color:#1e1153;">Quick Access</h6>
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <a href="{% url 'attendance_history' %}" class="quick-link card">
+      <div class="icon">📋</div>
+      <div class="fw-semibold small">My Attendance</div>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a href="{% url 'my_shifts' %}" class="quick-link card">
+      <div class="icon">🕐</div>
+      <div class="fw-semibold small">My Shifts</div>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a href="{% url 'job_card_list' %}" class="quick-link card">
+      <div class="icon">🔧</div>
+      <div class="fw-semibold small">Job Cards</div>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a href="{% url 'notifications' %}" class="quick-link card">
+      <div class="icon">🔔</div>
+      <div class="fw-semibold small">Notifications</div>
+    </a>
+  </div>
+</div>
+
+<!-- Notifications -->
+<div class="card border-0 shadow-sm rounded-3">
+  <div class="card-header bg-light fw-semibold" style="color:#1e1153;">🔔 Recent Notifications</div>
+  <ul class="list-group list-group-flush">
+    {% for note in notifications %}
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+        <span>{{ note.message }}</span>
+        <span class="text-muted small">{{ note.created_at|date:"H:i" }}</span>
+      </li>
+    {% empty %}
+      <li class="list-group-item text-muted text-center py-3">No notifications.</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

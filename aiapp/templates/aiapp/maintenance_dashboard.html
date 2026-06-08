@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Predictive Maintenance - AutoWorld{% endblock %}
+
+{% block content %}
+<style>
+  .maint-header { background:linear-gradient(135deg,#fd7e14,#e65c00); border-radius:16px; color:white; padding:2rem; margin-bottom:2rem; }
+  .maint-card { border:none; border-radius:14px; box-shadow:0 4px 16px rgba(30,17,83,.08); padding:1.5rem; margin-bottom:.75rem; }
+  .urgency-overdue  { border-left:4px solid #dc3545; background:#fce4ec; }
+  .urgency-due_soon { border-left:4px solid #fd7e14; background:#fff3e0; }
+  .badge-overdue  { background:#dc3545; color:white; border-radius:8px; padding:.25rem .65rem; font-size:.75rem; font-weight:700; }
+  .badge-due_soon { background:#fd7e14; color:white; border-radius:8px; padding:.25rem .65rem; font-size:.75rem; font-weight:700; }
+</style>
+
+<div class="maint-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+  <div>
+    <h3 class="fw-bold mb-1">🔧 Predictive Maintenance</h3>
+    <p class="mb-0 opacity-75">Customers due or overdue for service</p>
+  </div>
+  <div class="d-flex gap-2">
+    <button class="btn btn-outline-light rounded-pill px-4 fw-semibold" onclick="sendAlerts()" id="send-btn">
+      📨 Send Reminders
+    </button>
+    <button class="btn btn-outline-light rounded-pill px-4 fw-semibold" onclick="loadData()">↻ Refresh</button>
+    <a href="{% url 'dashboard' %}" class="btn btn-light rounded-pill px-4 fw-semibold">← Dashboard</a>
+  </div>
+</div>
+
+<div id="maint-loading" class="text-center py-5 text-muted">
+  <div style="font-size:3rem;">🔧</div>
+  <p class="mt-2">Analysing service patterns...</p>
+</div>
+
+<div id="maint-content" style="display:none;">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h6 class="fw-bold mb-0" style="color:#1e1153;" id="maint-count"></h6>
+    <div class="d-flex gap-2">
+      <span class="badge-overdue">🚨 Overdue</span>
+      <span class="badge-due_soon">🔔 Due Soon</span>
+    </div>
+  </div>
+  <div id="maint-list"></div>
+</div>
+
+<script>
+async function loadData() {
+  document.getElementById('maint-loading').style.display = 'block';
+  document.getElementById('maint-content').style.display = 'none';
+  try {
+    const r = await fetch("{% url 'maintenance_api' %}");
+    const d = await r.json();
+    document.getElementById('maint-count').textContent =
+      `${d.total} customer${d.total !== 1 ? 's' : ''} need attention`;
+    const el = document.getElementById('maint-list');
+    if (!d.predictions.length) {
+      el.innerHTML = '<div class="text-center text-success py-4">✅ No maintenance alerts right now.</div>';
+    } else {
+      el.innerHTML = d.predictions.map(p => `
+        <div class="maint-card urgency-${p.urgency}">
+          <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+            <div>
+              <div class="fw-bold" style="color:#1e1153;">${p.username}
+                <span class="badge-${p.urgency} ms-2">${p.urgency === 'overdue' ? '🚨 Overdue' : '🔔 Due Soon'}</span>
+              </div>
+              <div class="text-muted small">${p.email}</div>
+              <div class="small mt-1">Last: <strong>${p.service_type}</strong> on ${p.last_service} with ${p.mechanic}</div>
+              <div class="small text-muted">${p.days_since} days ago · Interval: ${p.interval} days</div>
+            </div>
+            <div class="text-end">
+              ${p.urgency === 'overdue'
+                ? `<div class="fw-bold text-danger">${p.days_overdue} days overdue</div>`
+                : `<div class="fw-bold text-warning">Due in ${p.days_until} days</div>`}
+              <div class="text-muted small">${p.total_bookings} total bookings</div>
+            </div>
+          </div>
+        </div>`
+      ).join('');
+    }
+    document.getElementById('maint-loading').style.display = 'none';
+    document.getElementById('maint-content').style.display = 'block';
+  } catch(e) {
+    document.getElementById('maint-loading').innerHTML =
+      '<div style="font-size:2rem;">⚠️</div><p class="text-danger mt-2">Failed to load data.</p>';
+  }
+}
+
+async function sendAlerts() {
+  const btn = document.getElementById('send-btn');
+  btn.disabled = true; btn.textContent = 'Sending...';
+  try {
+    const r = await fetch("{% url 'send_maintenance_alerts' %}");
+    const d = await r.json();
+    alert(`✅ ${d.sent} maintenance reminder${d.sent !== 1 ? 's' : ''} sent!`);
+    loadData();
+  } catch(e) { alert('Failed to send alerts.'); }
+  btn.disabled = false; btn.textContent = '📨 Send Reminders';
+}
+
+document.addEventListener('DOMContentLoaded', loadData);
+</script>
+{% endblock %}

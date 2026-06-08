@@ -1,0 +1,640 @@
+{% load static %}
+{% load group_tags %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}AutoWorld{% endblock %}</title>
+
+  <!-- Bootstrap 5.3 CSS (load first so our overrides win) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <!-- styles.css loaded before inline block so our !important rules override it -->
+  <link rel="stylesheet" href="{% static 'ecommerceapp/css/styles.css' %}">
+
+  <style>
+    /* ── Reset legacy styles.css conflicts ── */
+    body {
+      background-color: #f5f5f5 !important;
+      color: #212529 !important;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      display: block !important;   /* override any flex on body */
+    }
+    main {
+      display: block !important;   /* override legacy flex on main */
+      min-height: calc(100vh - 140px);
+    }
+
+    /* ── Cards ── */
+    .card {
+      background-color: #ffffff !important;
+      color: #212529 !important;
+      border: 1px solid rgba(0,0,0,.125) !important;
+    }
+    .card-title { color: #1e1153 !important; }
+    .card-text  { color: #212529 !important; }
+
+    /* ── Dark header sections (page heroes) ── */
+    .dash-header, .page-header, .hero, .bm-header,
+    .inv-header, .jc-header, .att-header, .shift-header,
+    .emp-header, .emp-dash-header, .mech-header,
+    .cust-header, .form-header, .sf-header, .notif-header,
+    .checkout-header, .cart-header, .about-hero, .gs-header,
+    .detail-header { color: #ffffff !important; }
+
+    /* ── Tables ── */
+    .table { color: #212529; }
+    .table th { color: #1e1153; }
+    .table td { color: #333; }
+
+    /* ── Forms ── */
+    .form-control, .form-select {
+      color: #212529 !important;
+      background-color: #ffffff !important;
+    }
+    .form-control::placeholder { color: #aaa !important; }
+
+    /* ── Role badges ── */
+    .role-badge {
+      font-size: 0.65rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+      color: #fff;
+    }
+
+    /* ── Navbar ── */
+    .navbar {
+      background-color: #1e1153 !important;
+      padding-top: 0.6rem;
+      padding-bottom: 0.6rem;
+    }
+    .navbar-brand {
+      font-size: 1.4rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #11ba1f !important;
+    }
+    .navbar-toggler {
+      border: 2px solid rgba(255,255,255,0.4);
+      padding: 0.3rem 0.5rem;
+      border-radius: 6px;
+    }
+    .navbar-toggler:focus { box-shadow: none; }
+    .navbar-toggler-icon { filter: invert(1); }
+
+    /* Nav links — white on dark navbar */
+    .navbar-nav .nav-link {
+      color: #ffffff !important;
+      font-size: 0.9rem;
+      font-weight: 500;
+      padding: 0.45rem 0.6rem;
+      border-radius: 6px;
+      transition: color 0.15s, background 0.15s;
+    }
+    .navbar-nav .nav-link:hover,
+    .navbar-nav .nav-link.active {
+      color: #11ba1f !important;
+      background: rgba(255,255,255,0.07);
+    }
+
+    /* Dropdown — desktop */
+    .dropdown-menu {
+      border-radius: 12px;
+      border: none;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.14);
+      min-width: 210px;
+      padding: 0.4rem 0;
+    }
+    .dropdown-item {
+      font-size: 0.88rem;
+      padding: 0.5rem 1rem;
+      color: #1e1153 !important;
+      transition: background 0.15s;
+    }
+    .dropdown-item:hover { background: #f4f3ff; color: #1e1153 !important; }
+    .dropdown-item.text-danger { color: #dc3545 !important; }
+    .dropdown-item.text-danger:hover { background: #fce4ec; }
+    .dropdown-divider { margin: 0.25rem 0; }
+    .dropdown-header { color: #888 !important; font-size: 0.72rem; }
+
+    /* Dropdown — mobile (inside collapsed nav) */
+    @media (max-width: 991.98px) {
+      .dropdown-menu {
+        max-height: 60vh;
+        overflow-y: auto;
+        box-shadow: none;
+        border-radius: 8px;
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.15);
+      }
+      .dropdown-item {
+        color: #ffffff !important;
+        font-weight: 500;
+      }
+      .dropdown-item:hover {
+        background: rgba(255,255,255,0.15) !important;
+        color: #11ba1f !important;
+      }
+      .dropdown-item.text-danger { color: #ff8080 !important; }
+      .dropdown-header {
+        color: rgba(255,255,255,0.6) !important;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .dropdown-divider { border-color: rgba(255,255,255,0.15); }
+      .navbar-collapse { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+      .navbar-nav .nav-item { border-bottom: 1px solid rgba(255,255,255,0.08); }
+      .navbar-nav .nav-item:last-child { border-bottom: none; }
+    }
+
+    /* ── Notification badge ── */
+    .notification-badge { font-size: 0.65rem; padding: 3px 6px; }
+
+    /* ── Footer ── */
+    footer { background-color: #1e1153; color: #11ba1f; }
+
+    /* ── AI Chat Widget ── */
+    #aw-chat-fab {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      z-index: 9999;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #1e1153, #2d1b8e);
+      color: white;
+      border: none;
+      font-size: 1.25rem;
+      box-shadow: 0 4px 20px rgba(30,17,83,0.4);
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #aw-chat-fab:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 28px rgba(30,17,83,0.55);
+    }
+    #aw-unread-dot {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #11ba1f;
+      border: 2px solid white;
+      display: none;
+    }
+    #aw-chat-window {
+      position: fixed;
+      bottom: 5rem;
+      right: 1.5rem;
+      z-index: 9998;
+      width: 360px;
+      max-width: calc(100vw - 2rem);
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 12px 48px rgba(30,17,83,0.2);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      max-height: 520px;
+    }
+    #aw-chat-window.open { display: flex; }
+    .aw-chat-header {
+      background: linear-gradient(135deg, #1e1153, #2d1b8e);
+      color: white;
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .aw-chat-header .aw-title { font-weight: 700; font-size: 0.95rem; color: white; }
+    .aw-chat-header .aw-sub  { font-size: 0.75rem; opacity: 0.75; color: white; }
+    .aw-close {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.1rem;
+      cursor: pointer;
+      opacity: 0.8;
+      line-height: 1;
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+    }
+    .aw-close:hover { opacity: 1; background: rgba(255,255,255,0.15); }
+    #aw-chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      min-height: 200px;
+    }
+    .aw-msg {
+      max-width: 85%;
+      padding: 0.65rem 0.9rem;
+      border-radius: 14px;
+      font-size: 0.88rem;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+    .aw-msg.user {
+      background: #1e1153;
+      color: white;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+    .aw-msg.assistant {
+      background: #f4f3ff;
+      color: #1e1153;
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+    .aw-msg.typing {
+      background: #f4f3ff;
+      color: #888;
+      align-self: flex-start;
+      font-style: italic;
+    }
+    .aw-quick-btns {
+      padding: 0.5rem 1rem 0.25rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    .aw-quick-btn {
+      background: #f4f3ff;
+      color: #1e1153;
+      border: none;
+      border-radius: 20px;
+      padding: 0.3rem 0.75rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .aw-quick-btn:hover { background: #e8e7ff; }
+    .aw-input-row {
+      padding: 0.75rem 1rem;
+      border-top: 1px solid #f0f0f0;
+      display: flex;
+      gap: 0.5rem;
+    }
+    #aw-input {
+      flex: 1;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.88rem;
+      outline: none;
+      transition: border-color 0.15s;
+      color: #212529;
+    }
+    #aw-input:focus { border-color: #1e1153; }
+    #aw-send {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #1e1153;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+    }
+    #aw-send:hover { background: #2d1b8e; }
+    #aw-send:disabled { background: #ccc; cursor: not-allowed; }
+  </style>
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<!-- ── Navbar ──────────────────────────────────────────────────────────────── -->
+<nav class="navbar navbar-dark navbar-expand-lg">
+  <div class="container-fluid container-lg">
+
+    <!-- Brand -->
+    <a class="navbar-brand" href="{% url 'home' %}">AutoWorld</a>
+
+    <!-- Hamburger toggler -->
+    <button class="navbar-toggler" type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#navbarMain"
+            aria-controls="navbarMain"
+            aria-expanded="false"
+            aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <!-- Collapsible nav content -->
+    <div class="collapse navbar-collapse" id="navbarMain">
+      <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-1">
+
+        <!-- Public links -->
+        <li class="nav-item">
+          <a class="nav-link {% if request.path == '/' %}active{% endif %}"
+             href="{% url 'home' %}">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if '/vehicles/' in request.path %}active{% endif %}"
+             href="{% url 'vehicle_list' %}">Vehicles</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if '/mechanics/' in request.path %}active{% endif %}"
+             href="{% url 'mechanics_list' %}">Mechanics</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if '/spareparts/' in request.path %}active{% endif %}"
+             href="{% url 'spareparts_list' %}">Spare Parts</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if '/recommend/' in request.path %}active{% endif %}"
+             href="{% url 'recommendation' %}">Smart Finder</a>
+        </li>
+
+        {% if user.is_authenticated %}
+
+          <!-- Cart (non-admin users) -->
+          {% if not user.is_superuser %}
+          <li class="nav-item">
+            <a class="nav-link {% if '/cart/' in request.path %}active{% endif %}"
+               href="{% url 'view_cart' %}">
+              <i class="fa-solid fa-cart-shopping me-1"></i>Cart
+            </a>
+          </li>
+          {% endif %}
+
+          <!-- Notification Bell -->
+          <li class="nav-item position-relative">
+            <a href="{% url 'notifications' %}" class="nav-link">
+              <i class="fa-solid fa-bell"></i>
+              <span id="notification-count"
+                    class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-badge"
+                    style="display: none;"></span>
+            </a>
+          </li>
+
+          <!-- ── ADMIN / SUPERUSER ── -->
+          {% if user.is_superuser %}
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle d-flex align-items-center gap-2"
+               href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <span class="role-badge" style="background: #11ba1f;">ADMIN</span>
+              {{ user.username }}
+            </a>
+            <ul class="dropdown-menu dropdown-menu-lg-end">
+              <li><h6 class="dropdown-header">Management</h6></li>
+              <li><a class="dropdown-item" href="{% url 'dashboard' %}">Admin Dashboard</a></li>
+              <li><a class="dropdown-item" href="{% url 'manage_inventory' %}">Inventory</a></li>
+              <li><a class="dropdown-item" href="{% url 'job_card_list' %}">Job Cards</a></li>
+              <li><a class="dropdown-item" href="{% url 'booking_insights' %}">Bookings</a></li>
+              <li><a class="dropdown-item" href="{% url 'attendance_today' %}">Attendance</a></li>
+              <li><a class="dropdown-item" href="{% url 'employee_list' %}">Employees</a></li>
+              <li><a class="dropdown-item" href="{% url 'pending_payments' %}">Payments</a></li>
+              <li><a class="dropdown-item" href="{% url 'offer_list' %}">Offers</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><h6 class="dropdown-header">AI &amp; Analytics</h6></li>
+              <li><a class="dropdown-item" href="{% url 'forecast_dashboard' %}">AI Forecast</a></li>
+              <li><a class="dropdown-item" href="{% url 'inventory_dashboard' %}">Inventory AI</a></li>
+              <li><a class="dropdown-item" href="{% url 'reports_page' %}">Reports</a></li>
+              <li><a class="dropdown-item" href="{% url 'rfm_dashboard' %}">Customer Segments</a></li>
+              <li><a class="dropdown-item" href="{% url 'evaluation_dashboard' %}">System Metrics</a></li>
+              <li><a class="dropdown-item" href="{% url 'maintenance_dashboard' %}">Maintenance</a></li>
+              <li><a class="dropdown-item" href="{% url 'mechanic_performance' %}">Mechanic Performance</a></li>
+              <li><a class="dropdown-item" href="{% url 'api_docs' %}">API Docs</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item text-danger" href="{% url 'logout' %}">Logout</a></li>
+            </ul>
+          </li>
+
+          <!-- ── MECHANIC ── -->
+          {% elif 'Mechanic' in user.groups.all|pluck:'name' %}
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle d-flex align-items-center gap-2"
+               href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <span class="role-badge" style="background: #0d6efd;">MECHANIC</span>
+              {{ user.username }}
+            </a>
+            <ul class="dropdown-menu dropdown-menu-lg-end">
+              <li><a class="dropdown-item" href="{% url 'mechanic_dashboard' %}">My Dashboard</a></li>
+              <li><a class="dropdown-item" href="{% url 'job_card_list' %}">Job Cards</a></li>
+              <li><a class="dropdown-item" href="{% url 'notifications' %}">Notifications</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item text-danger" href="{% url 'logout' %}">Logout</a></li>
+            </ul>
+          </li>
+
+          <!-- ── EMPLOYEE ── -->
+          {% elif 'Employee' in user.groups.all|pluck:'name' %}
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle d-flex align-items-center gap-2"
+               href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <span class="role-badge" style="background: #fd7e14;">STAFF</span>
+              {{ user.username }}
+            </a>
+            <ul class="dropdown-menu dropdown-menu-lg-end">
+              <li><a class="dropdown-item" href="{% url 'employee_dashboard' %}">My Dashboard</a></li>
+              <li><a class="dropdown-item" href="{% url 'attendance_checkin' %}">Check In</a></li>
+              <li><a class="dropdown-item" href="{% url 'attendance_checkout' %}">Check Out</a></li>
+              <li><a class="dropdown-item" href="{% url 'attendance_history' %}">My Attendance</a></li>
+              <li><a class="dropdown-item" href="{% url 'my_shifts' %}">My Shifts</a></li>
+              <li><a class="dropdown-item" href="{% url 'job_card_list' %}">Job Cards</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item text-danger" href="{% url 'logout' %}">Logout</a></li>
+            </ul>
+          </li>
+
+          <!-- ── CUSTOMER ── -->
+          {% else %}
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle d-flex align-items-center gap-2"
+               href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <span class="role-badge" style="background: #6c757d;">CUSTOMER</span>
+              {{ user.username }}
+            </a>
+            <ul class="dropdown-menu dropdown-menu-lg-end">
+              <li><a class="dropdown-item" href="{% url 'customer_dashboard' %}">My Dashboard</a></li>
+              <li><a class="dropdown-item" href="{% url 'vehicle_analysis' %}">Vehicle Diagnosis</a></li>
+              <li><a class="dropdown-item" href="{% url 'customer_booking_history' %}">My Bookings</a></li>
+              <li><a class="dropdown-item" href="{% url 'view_cart' %}">My Cart</a></li>
+              <li><a class="dropdown-item" href="{% url 'notifications' %}">Notifications</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item text-danger" href="{% url 'logout' %}">Logout</a></li>
+            </ul>
+          </li>
+          {% endif %}
+
+        {% else %}
+          <!-- Guest links -->
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'login' %}">Login</a>
+          </li>
+          <li class="nav-item ms-lg-1">
+            <a class="btn btn-sm rounded-pill px-3 fw-semibold"
+               href="{% url 'register' %}"
+               style="background: #11ba1f; color: white;">Sign Up</a>
+          </li>
+        {% endif %}
+
+      </ul>
+    </div><!-- /.collapse.navbar-collapse -->
+  </div><!-- /.container -->
+</nav>
+
+<!-- ── Main Content ────────────────────────────────────────────────────────── -->
+<main class="my-4">
+  <div class="container">
+    {% block content %}{% endblock %}
+  </div>
+</main>
+
+<!-- ── Footer ─────────────────────────────────────────────────────────────── -->
+<footer class="text-center py-4 mt-5">
+  <div class="container">
+    <p class="mb-0">&copy; 2025 AutoWorld. All rights reserved.</p>
+  </div>
+</footer>
+
+<!-- Bootstrap 5.3 JS bundle (includes Popper) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Notification polling -->
+{% if user.is_authenticated %}
+<script>
+  async function fetchNotifications() {
+    try {
+      const r = await fetch("{% url 'get_notifications' %}");
+      if (r.ok) {
+        const data = await r.json();
+        const badge = document.getElementById("notification-count");
+        if (data.unread_count > 0) {
+          badge.style.display = "inline-block";
+          badge.textContent = data.unread_count;
+        } else {
+          badge.style.display = "none";
+        }
+      }
+    } catch (e) {}
+  }
+  fetchNotifications();
+  setInterval(fetchNotifications, 15000);
+</script>
+{% endif %}
+
+<!-- ── AI Chat Widget ─────────────────────────────────────────────────────── -->
+{% if user.is_authenticated %}
+<button id="aw-chat-fab" onclick="awToggle()" title="AutoWorld AI Assistant" aria-label="Open AI chat">
+  <i class="fa-solid fa-robot"></i>
+  <span id="aw-unread-dot" aria-hidden="true"></span>
+</button>
+
+<div id="aw-chat-window" role="dialog" aria-label="AutoWorld AI Assistant">
+  <div class="aw-chat-header">
+    <div>
+      <div class="aw-title"><i class="fa-solid fa-robot me-2"></i>AutoWorld AI</div>
+      <div class="aw-sub">Ask about vehicles, parts &amp; bookings</div>
+    </div>
+    <button class="aw-close" onclick="awToggle()" aria-label="Close chat">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </div>
+  <div class="aw-quick-btns" id="aw-quick-btns">
+    <button class="aw-quick-btn" onclick="awQuick('Find me a vehicle')">Vehicles</button>
+    <button class="aw-quick-btn" onclick="awQuick('I need spare parts')">Parts</button>
+    <button class="aw-quick-btn" onclick="awQuick('Book a mechanic')">Mechanic</button>
+    <button class="aw-quick-btn" onclick="awQuick('How do I pay?')">Payment</button>
+  </div>
+  <div id="aw-chat-messages" aria-live="polite">
+    <div class="aw-msg assistant">Hi {{ user.first_name|default:user.username }}! I'm AutoWorld AI. How can I help?</div>
+  </div>
+  <div class="aw-input-row">
+    <input type="text" id="aw-input" placeholder="Ask me anything..."
+           aria-label="Chat message"
+           onkeydown="if(event.key==='Enter') awSend()">
+    <button id="aw-send" onclick="awSend()" aria-label="Send message">
+      <i class="fa-solid fa-paper-plane"></i>
+    </button>
+  </div>
+</div>
+
+<script>
+  let awOpen = false, awHistory = [];
+
+  function awToggle() {
+    awOpen = !awOpen;
+    document.getElementById('aw-chat-window').classList.toggle('open', awOpen);
+    document.getElementById('aw-unread-dot').style.display = 'none';
+    if (awOpen) document.getElementById('aw-input').focus();
+  }
+
+  function awAppend(role, text) {
+    const c = document.getElementById('aw-chat-messages');
+    const d = document.createElement('div');
+    d.className = 'aw-msg ' + role;
+    d.textContent = text;
+    c.appendChild(d);
+    c.scrollTop = c.scrollHeight;
+    return d;
+  }
+
+  function awQuick(t) {
+    document.getElementById('aw-quick-btns').style.display = 'none';
+    document.getElementById('aw-input').value = t;
+    awSend();
+  }
+
+  async function awSend() {
+    const inp = document.getElementById('aw-input');
+    const btn = document.getElementById('aw-send');
+    const txt = inp.value.trim();
+    if (!txt) return;
+    inp.value = '';
+    btn.disabled = true;
+    awAppend('user', txt);
+    awHistory.push({ role: 'user', content: txt });
+    const typing = awAppend('typing', 'Thinking...');
+    try {
+      const r = await fetch("{% url 'ai_chat' %}", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({ message: txt, history: awHistory.slice(-6) })
+      });
+      const data = await r.json();
+      typing.remove();
+      const reply = data.response || data.error || 'Sorry, something went wrong.';
+      awAppend('assistant', reply);
+      awHistory.push({ role: 'assistant', content: reply });
+      if (!awOpen) document.getElementById('aw-unread-dot').style.display = 'block';
+    } catch (e) {
+      typing.remove();
+      awAppend('assistant', 'Connection error. Please try again.');
+    }
+    btn.disabled = false;
+    inp.focus();
+  }
+</script>
+{% endif %}
+
+{% block extra_scripts %}{% endblock %}
+
+</body>
+</html>

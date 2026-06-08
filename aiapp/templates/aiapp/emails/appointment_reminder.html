@@ -1,0 +1,48 @@
+{% extends "aiapp/emails/base_email.html" %}
+{% block content %}
+<h2>Reminder: Your appointment is tomorrow! ⏰</h2>
+<p>Hi {{ booking.user.first_name|default:booking.user.username }}, just a friendly reminder about your upcoming service appointment.</p>
+
+<div class="info-box">
+  <div class="info-row">
+    <span class="info-label">Mechanic</span>
+    <span class="info-value">{{ booking.mechanic.name }}</span>
+  </div>
+  <div class="info-row">
+    <span class="info-label">Date</span>
+    <span class="info-value"><strong>{{ booking.booking_date }}</strong></span>
+  </div>
+  <div class="info-row">
+    <span class="info-label">Time</span>
+    <span class="info-value"><strong>{{ booking.time }}</strong></span>
+  </div>
+  <div class="info-row">
+    <span class="info-label">Service</span>
+    <span class="info-value">{{ booking.service_type }}</span>
+  </div>
+  <div class="info-row">
+    <span class="info-label">Location</span>
+    <span class="info-value">{{ booking.mechanic.location }}</span>
+  </div>
+  <div class="info-row">
+    <span class="info-label">Mechanic Phone</span>
+    <span class="info-value">{{ booking.mechanic.phone }}</span>
+  </div>
+</div>
+
+<p>📋 <strong>Please remember to:</strong><br>
+• Arrive on time or contact the mechanic if you're running late<br>
+• Bring your vehicle documents if needed<br>
+• Have your payment method ready</p>
+
+{% if not booking.is_paid %}
+<p>⚠️ <strong>Your deposit is still unpaid.</strong> Please pay before your appointment to avoid cancellation.</p>
+<div style="text-align:center; margin:20px 0;">
+  <a href="{{ site_url }}/paymentapp/mechanic-payment/" class="btn">Pay Deposit Now</a>
+</div>
+{% endif %}
+
+<div style="text-align:center; margin:16px 0;">
+  <a href="{{ site_url }}/customer/booking/cancel/{{ booking.id }}/" class="btn-outline" style="border-color:#dc3545; color:#dc3545 !important;">Cancel Booking</a>
+</div>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "aiapp/emails/base_email.html" %}
+{% block content %}
+{% if booking.status == 'Approved' %}
+<h2>Your booking is confirmed! ✅</h2>
+<p>Hi {{ booking.user.first_name|default:booking.user.username }}, great news — your booking has been approved by {{ booking.mechanic.name }}.</p>
+{% elif booking.status == 'Cancelled' %}
+<h2>Booking Cancelled ❌</h2>
+<p>Hi {{ booking.user.first_name|default:booking.user.username }}, unfortunately your booking has been cancelled.</p>
+{% elif booking.status == 'Completed' %}
+<h2>Service Complete! 🎉</h2>
+<p>Hi {{ booking.user.first_name|default:booking.user.username }}, your service with {{ booking.mechanic.name }} has been marked as complete.</p>
+{% else %}
+<h2>Booking Update</h2>
+<p>Hi {{ booking.user.first_name|default:booking.user.username }}, your booking status has been updated.</p>
+{% endif %}
+
+<div class="info-box">
+  <div class="info-row"><span class="info-label">Status</span>
+    <span class="info-value"><span class="status-{{ booking.status|lower }}">{{ booking.status }}</span></span>
+  </div>
+  <div class="info-row"><span class="info-label">Mechanic</span><span class="info-value">{{ booking.mechanic.name }}</span></div>
+  <div class="info-row"><span class="info-label">Date</span><span class="info-value">{{ booking.booking_date }}</span></div>
+  <div class="info-row"><span class="info-label">Service</span><span class="info-value">{{ booking.service_type }}</span></div>
+  <div class="info-row"><span class="info-label">Booking #</span><span class="info-value">#{{ booking.id }}</span></div>
+</div>
+
+{% if booking.status == 'Cancelled' %}
+<p>We're sorry for the inconvenience. You can book another mechanic anytime.</p>
+<div style="text-align:center; margin:20px 0;">
+  <a href="{{ site_url }}/mechanics/" class="btn">Find Another Mechanic</a>
+</div>
+{% elif booking.status == 'Completed' %}
+<p>Thank you for choosing AutoWorld. We hope the service met your expectations!</p>
+<div style="text-align:center; margin:20px 0;">
+  <a href="{{ site_url }}/booking/{{ booking.id }}/rate/" class="btn">Rate Your Experience ⭐</a>
+</div>
+{% else %}
+<div style="text-align:center; margin:20px 0;">
+  <a href="{{ site_url }}/customer/booking-history/" class="btn-outline">View My Bookings</a>
+</div>
+{% endif %}
+{% endblock %}

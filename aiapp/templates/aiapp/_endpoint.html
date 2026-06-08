@@ -1,0 +1,39 @@
+{% load static %}
+<div class="endpoint-card card">
+  <div class="endpoint-header" onclick="toggleEndpoint(this)">
+    <span class="method {{ method }}">{{ method }}</span>
+    <span class="url-path">{{ path }}</span>
+    <span class="fw-semibold ms-2" style="color:#333;">{{ title }}</span>
+    {% if auth != "Public" %}
+    <span class="auth-badge ms-auto">🔒 {{ auth }}</span>
+    {% else %}
+    <span class="auth-badge ms-auto" style="background:#e8f5e9;color:#2e7d32;">🌐 Public</span>
+    {% endif %}
+    <span class="text-muted ms-2">▾</span>
+  </div>
+  <div class="endpoint-body">
+    <p class="text-muted small mb-3">{{ desc }}</p>
+
+    {% if params != '[]' %}
+    <h6 class="fw-bold mb-2" style="font-size:.82rem; color:#1e1153;">Parameters</h6>
+    <div class="table-responsive mb-3">
+      <table class="table param-table table-sm mb-0">
+        <thead><tr><th>Name</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+        <tbody>
+          {% for p in params %}
+          <tr>
+            <td><code>{{ p.0 }}</code></td>
+            <td class="text-muted">{{ p.1 }}</td>
+            <td>{% if p.2 == "required" %}<span style="color:#dc3545;">✓</span>{% else %}<span class="text-muted">—</span>{% endif %}</td>
+            <td class="text-muted">{{ p.3 }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    <h6 class="fw-bold mb-2" style="font-size:.82rem; color:#1e1153;">Response</h6>
+    <div class="response-box">{{ response }}</div>
+  </div>
+</div>

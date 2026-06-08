@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Spare Parts - AutoWorld{% endblock %}
+
+{% block content %}
+<style>
+  .page-header { background:linear-gradient(135deg,#11ba1f,#0d9e1a); border-radius:14px; color:white; padding:1.5rem 2rem; margin-bottom:1.5rem; }
+  .page-header h3 { font-size:1.4rem; font-weight:700; margin:0 0 4px; }
+  .page-header p  { font-size:.88rem; opacity:.8; margin:0; }
+  .search-wrap { background:white; border-radius:12px; padding:1rem 1.25rem; margin-bottom:1.5rem; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+  .search-wrap .form-control { border:1.5px solid #e0e0e0; border-radius:8px; font-size:.9rem; }
+  .search-wrap .form-control:focus { border-color:#11ba1f; box-shadow:none; }
+  .btn-search { background:#11ba1f; color:white; border:none; border-radius:8px; font-weight:600; font-size:.9rem; padding:.5rem 1.25rem; }
+  .btn-search:hover { background:#0d9e1a; color:white; }
+
+  .sp-card { border:none; border-radius:14px; box-shadow:0 2px 12px rgba(30,17,83,.08); overflow:hidden; transition:transform .18s, box-shadow .18s; height:100%; }
+  .sp-card:hover { transform:translateY(-4px); box-shadow:0 8px 24px rgba(30,17,83,.14); }
+  .sp-card-img { height:160px; object-fit:cover; width:100%; display:block; }
+  .sp-card-placeholder { height:160px; background:#f0fff4; display:flex; align-items:center; justify-content:center; }
+  .sp-card-body { padding:1rem; display:flex; flex-direction:column; }
+  .sp-card-title { font-weight:700; color:#1e1153; font-size:.92rem; margin:0 0 4px; }
+  .sp-compat { font-size:.75rem; background:#e8f5e9; color:#2e7d32; border-radius:6px; padding:2px 8px; display:inline-block; margin-bottom:6px; }
+  .sp-card-price { font-weight:800; color:#11ba1f; font-size:.98rem; margin:0 0 6px; }
+  .sp-card-desc  { font-size:.78rem; color:#777; margin:0 0 12px; flex-grow:1; }
+  .btn-cart-full { width:100%; background:#11ba1f; color:white; border:none; border-radius:8px; font-size:.82rem; font-weight:600; padding:.45rem; cursor:pointer; margin-top:auto; }
+  .btn-cart-full:hover { background:#0d9e1a; }
+  .btn-login { width:100%; background:#1e1153; color:white; border:none; border-radius:8px; font-size:.82rem; font-weight:600; padding:.45rem; text-align:center; text-decoration:none; display:block; margin-top:auto; }
+  .empty-state { text-align:center; padding:4rem 1rem; color:#aaa; }
+  .empty-state h5 { color:#555; margin-top:1rem; }
+</style>
+
+<!-- Header -->
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h3>Spare Parts</h3>
+    <p>{{ spareparts.count }} part{{ spareparts.count|pluralize }} available</p>
+  </div>
+  {% if user.is_staff %}
+  <a href="{% url 'manage_inventory' %}" class="btn btn-outline-light btn-sm rounded-pill px-3">Manage Inventory</a>
+  {% endif %}
+</div>
+
+<!-- Search -->
+<div class="search-wrap">
+  <form method="GET">
+    <div class="row g-2 align-items-center">
+      <div class="col-12 col-sm-8">
+        <input type="text" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="Search by part name or compatible vehicle...">
+      </div>
+      <div class="col-6 col-sm-2">
+        <button type="submit" class="btn-search w-100">Search</button>
+      </div>
+      {% if request.GET.q %}
+      <div class="col-6 col-sm-2">
+        <a href="{% url 'spareparts_list' %}" class="btn btn-outline-secondary w-100 btn-sm">Clear</a>
+      </div>
+      {% endif %}
+    </div>
+  </form>
+</div>
+
+<!-- Grid -->
+{% if spareparts %}
+<div class="row row-cols-2 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
+  {% for part in spareparts %}
+  <div class="col">
+    <div class="sp-card card">
+      {% if part.image %}
+        <img src="{{ part.image.url }}" class="sp-card-img" alt="{{ part.name }}">
+      {% else %}
+        <div class="sp-card-placeholder">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#11ba1f" stroke-width="1.5" opacity=".4">
+            <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3-3a1 1 0 000-1.4l-1.6-1.6a1 1 0 00-1.4 0l-3 3zM5 20l4-4 4 4M3 12h4m10 0h4M12 3v4m0 10v4"/>
+          </svg>
+        </div>
+      {% endif %}
+      <div class="sp-card-body">
+        <div class="sp-card-title">{{ part.name }}</div>
+        <span class="sp-compat">{{ part.compatible_vehicle }}</span>
+        <div class="sp-card-price">KES {{ part.price|floatformat:0 }}</div>
+        <div class="sp-card-desc">{{ part.description|truncatechars:55 }}</div>
+        {% if user.is_authenticated and not user.is_staff %}
+        <form method="post" action="{% url 'add_to_cart' 'sparepart' part.id %}" style="margin:0;">
+          {% csrf_token %}
+          <button type="submit" class="btn-cart-full">Add to Cart</button>
+        </form>
+        {% elif not user.is_authenticated %}
+        <a href="{% url 'login' %}" class="btn-login">Login to Buy</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5">
+    <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3-3a1 1 0 000-1.4l-1.6-1.6a1 1 0 00-1.4 0l-3 3zM5 20l4-4 4 4"/>
+  </svg>
+  <h5>No spare parts found</h5>
+  <p>Try a different search term.</p>
+  <a href="{% url 'spareparts_list' %}" class="btn btn-sm rounded-pill px-4" style="background:#11ba1f;color:white;">Clear Search</a>
+</div>
+{% endif %}
+{% endblock %}

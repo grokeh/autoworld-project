@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block title %}Customer Segmentation - AutoWorld{% endblock %}
+
+{% block content %}
+<style>
+  .rfm-header { background:linear-gradient(135deg,#1e1153,#2d1b8e); border-radius:16px; color:white; padding:2rem; margin-bottom:2rem; }
+  .seg-card { border:none; border-radius:14px; box-shadow:0 4px 16px rgba(30,17,83,.08); padding:1.25rem; cursor:pointer; transition:transform .2s; }
+  .seg-card:hover { transform:translateY(-3px); }
+  .seg-card.active { box-shadow:0 0 0 3px #1e1153; }
+  .rfm-table th { background:#f4f3ff; color:#1e1153; font-weight:600; font-size:.82rem; text-transform:uppercase; letter-spacing:.5px; border:none; }
+  .rfm-table td { vertical-align:middle; border-color:#f0f0f0; font-size:.88rem; }
+  .score-dot { width:28px; height:28px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:.75rem; font-weight:700; color:white; }
+  .score-5 { background:#11ba1f; }
+  .score-4 { background:#4caf50; }
+  .score-3 { background:#fd7e14; }
+  .score-2 { background:#ff9800; }
+  .score-1 { background:#dc3545; }
+  .filter-btn { border-radius:20px; padding:.35rem .9rem; font-size:.82rem; border:2px solid #e0e0e0; background:white; color:#555; cursor:pointer; transition:all .2s; }
+  .filter-btn.active { background:#1e1153; color:white; border-color:#1e1153; }
+</style>
+
+<!-- Header -->
+<div class="rfm-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+  <div>
+    <h3 class="fw-bold mb-1">👥 Customer Segmentation</h3>
+    <p class="mb-0 opacity-75">RFM Analysis — Recency, Frequency, Monetary</p>
+  </div>
+  <div class="d-flex gap-2">
+    <button class="btn btn-outline-light rounded-pill px-4 fw-semibold" onclick="loadRFM()">↻ Refresh</button>
+    <a href="{% url 'dashboard' %}" class="btn btn-light rounded-pill px-4 fw-semibold">← Dashboard</a>
+  </div>
+</div>
+
+<!-- Loading -->
+<div id="rfm-loading" class="text-center py-5 text-muted">
+  <div style="font-size:3rem;">👥</div>
+  <p class="mt-2">Analysing customer behaviour...</p>
+</div>
+
+<div id="rfm-content" style="display:none;">
+
+  <!-- Segment Cards -->
+  <div class="row g-3 mb-4" id="seg-cards"></div>
+
+  <!-- Filter -->
+  <div class="d-flex flex-wrap gap-2 mb-3" id="seg-filters">
+    <button class="filter-btn active" onclick="filterSeg('', this)">All Customers</button>
+  </div>
+
+  <!-- Table -->
+  <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+    <div class="table-responsive">
+      <table class="table rfm-table mb-0">
+        <thead>
+          <tr>
+            <th>Customer</th>
+            <th>Segment</th>
+            <th>Last Activity</th>
+            <th>Recency (days)</th>
+            <th>Frequency</th>
+            <th>Monetary (KES)</th>
+            <th>R</th><th>F</th><th>M</th>
+            <th>RFM Score</th>
+          </tr>
+        </thead>
+        <tbody id="rfm-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let allCustomers = [];
+let summaryData = {};
+
+async function loadRFM() {
+  document.getElementById('rfm-loading').style.display = 'block';
+  document.getElementById('rfm-content').style.display = 'none';
+  try {
+    const r = await fetch("{% url 'rfm_api' %}");
+    const d = await r.json();
+    allCustomers = d.customers;
+    summaryData = d.summary;
+    renderSegCards(d.summary);
+    renderFilters(d.summary);
+    renderTable(d.customers);
+    document.getElementById('rfm-loading').style.display = 'none';
+    document.getElementById('rfm-content').style.display = 'block';
+  } catch(e) {
+    document.getElementById('rfm-loading').innerHTML =
+      '<div style="font-size:2rem;">⚠️</div><p class="text-danger mt-2">Failed to load RFM data.</p>';
+  }
+}
+
+function renderSegCards(summary) {
+  const el = document.getElementById('seg-cards');
+  if (!summary || !Object.keys(summary).length) {
+    el.innerHTML = '<div class="col-12 text-muted text-center py-3">No customer data yet.</div>';
+    return;
+  }
+  el.innerHTML = Object.entries(summary).map(([seg, data]) => `
+    <div class="col-6 col-md-4 col-lg-2">
+      <div class="seg-card card" style="background:${data.bg}; border-left:4px solid ${data.color};"
+           onclick="filterSeg('${seg}', null)">
+        <div style="font-size:1.8rem;">${data.icon}</div>
+        <div class="fw-bold mt-1" style="color:${data.color}; font-size:.9rem;">${seg}</div>
+        <div class="fw-bold" style="font-size:1.5rem; color:#1e1153;">${data.count}</div>
+        <div class="text-muted" style="font-size:.75rem;">customers</div>
+        <div class="text-muted" style="font-size:.72rem;">Avg KES ${data.avg_monetary.toLocaleString()}</div>
+      </div>
+    </div>`
+  ).join('');
+}
+
+function renderFilters(summary) {
+  const el = document.getElementById('seg-filters');
+  const segs = Object.keys(summary);
+  const extra = segs.map(s =>
+    `<button class="filter-btn" onclick="filterSeg('${s}', this)">${summaryData[s]?.icon} ${s}</button>`
+  ).join('');
+  el.innerHTML = `<button class="filter-btn active" onclick="filterSeg('', this)">All</button>${extra}`;
+}
+
+function filterSeg(seg, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const filtered = seg ? allCustomers.filter(c => c.segment === seg) : allCustomers;
+  renderTable(filtered);
+}
+
+function renderTable(customers) {
+  const tbody = document.getElementById('rfm-tbody');
+  if (!customers.length) {
+    tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted py-4">No customers found.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = customers.map(c => `
+    <tr>
+      <td>
+        <div class="fw-semibold">${c.first_name}</div>
+        <div class="text-muted" style="font-size:.75rem;">${c.email || c.username}</div>
+      </td>
+      <td>
+        <span style="background:${c.bg}; color:${c.color}; border-radius:8px; padding:.2rem .6rem; font-size:.78rem; font-weight:700;">
+          ${c.icon} ${c.segment}
+        </span>
+      </td>
+      <td class="text-muted small">${c.last_activity}</td>
+      <td>${c.recency}d</td>
+      <td>${c.frequency}</td>
+      <td>KES ${c.monetary.toLocaleString()}</td>
+      <td><span class="score-dot score-${c.r_score}">${c.r_score}</span></td>
+      <td><span class="score-dot score-${c.f_score}">${c.f_score}</span></td>
+      <td><span class="score-dot score-${c.m_score}">${c.m_score}</span></td>
+      <td><strong>${c.rfm_score}</strong>/15</td>
+    </tr>`
+  ).join('');
+}
+
+document.addEventListener('DOMContentLoaded', loadRFM);
+</script>
+{% endblock %}

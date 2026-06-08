@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+{% block title %}Vehicle Diagnosis - AutoWorld{% endblock %}
+
+{% block content %}
+<style>
+  .va-header { background:linear-gradient(135deg,#1e1153,#2d1b8e); border-radius:16px; color:white; padding:2rem; margin-bottom:2rem; }
+  .upload-zone {
+    border:3px dashed #e0e0e0; border-radius:16px; padding:3rem 2rem;
+    text-align:center; cursor:pointer; transition:all .2s;
+    background:#fafafa;
+  }
+  .upload-zone:hover, .upload-zone.drag-over { border-color:#1e1153; background:#f4f3ff; }
+  .upload-zone .icon { font-size:3rem; margin-bottom:1rem; }
+  .preview-img { width:100%; max-height:320px; object-fit:cover; border-radius:14px; }
+  .result-card { border:none; border-radius:16px; box-shadow:0 4px 20px rgba(30,17,83,.09); padding:1.75rem; }
+  .severity-minor    { background:#e8f5e9; color:#2e7d32; border-radius:10px; padding:.5rem 1rem; }
+  .severity-moderate { background:#fff8e1; color:#f57f17; border-radius:10px; padding:.5rem 1rem; }
+  .severity-severe   { background:#fce4ec; color:#c62828; border-radius:10px; padding:.5rem 1rem; }
+  .severity-critical { background:#b71c1c; color:white; border-radius:10px; padding:.5rem 1rem; }
+  .severity-unknown  { background:#f5f5f5; color:#616161; border-radius:10px; padding:.5rem 1rem; }
+  .urgency-can_wait  { background:#e8f5e9; color:#2e7d32; }
+  .urgency-book_soon { background:#fff8e1; color:#f57f17; }
+  .urgency-urgent    { background:#fce4ec; color:#c62828; }
+  .urgency-emergency { background:#b71c1c; color:white; }
+  .issue-item { background:#f4f3ff; border-radius:8px; padding:.4rem .75rem; font-size:.88rem; color:#1e1153; margin-bottom:.4rem; }
+  .service-badge { background:#1e1153; color:white; border-radius:8px; padding:.3rem .75rem; font-size:.78rem; font-weight:600; margin:.2rem; display:inline-block; }
+  .spec-badge { background:#11ba1f; color:white; border-radius:8px; padding:.3rem .75rem; font-size:.78rem; font-weight:600; margin:.2rem; display:inline-block; }
+  .spinner { width:2rem; height:2rem; border:3px solid #f0f0f0; border-top-color:#1e1153; border-radius:50%; animation:spin .8s linear infinite; margin:0 auto; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+</style>
+
+<!-- Header -->
+<div class="va-header">
+  <h3 class="fw-bold mb-1">🔍 AI Vehicle Diagnosis</h3>
+  <p class="mb-0 opacity-75">Upload a photo of your vehicle and our AI will identify issues and recommend services</p>
+</div>
+
+<div class="row g-4">
+  <!-- Upload Section -->
+  <div class="col-lg-5">
+    <div class="card border-0 shadow-sm rounded-3 p-4">
+      <h6 class="fw-bold mb-3" style="color:#1e1153;">📸 Upload Vehicle Photo</h6>
+
+      <div class="upload-zone" id="upload-zone"
+           onclick="document.getElementById('image-input').click()"
+           ondragover="event.preventDefault(); this.classList.add('drag-over')"
+           ondragleave="this.classList.remove('drag-over')"
+           ondrop="handleDrop(event)">
+        <div id="upload-placeholder">
+          <div class="icon">🚗</div>
+          <div class="fw-semibold" style="color:#1e1153;">Click or drag to upload</div>
+          <div class="text-muted small mt-1">JPEG, PNG, WebP · Max 5MB</div>
+        </div>
+        <img id="preview" class="preview-img" style="display:none;">
+      </div>
+
+      <input type="file" id="image-input" accept="image/*" style="display:none"
+             onchange="previewImage(this)">
+
+      <div class="mt-3 text-muted small">
+        <strong>Tips for best results:</strong>
+        <ul class="mt-1 mb-0">
+          <li>Take photo in good lighting</li>
+          <li>Show the damaged/problematic area clearly</li>
+          <li>Include the full vehicle if possible</li>
+        </ul>
+      </div>
+
+      <button class="btn w-100 rounded-pill fw-bold mt-3 py-2"
+              style="background:#1e1153; color:white;"
+              id="analyze-btn" onclick="analyzeImage()" disabled>
+        🔍 Analyse Vehicle
+      </button>
+    </div>
+  </div>
+
+  <!-- Results Section -->
+  <div class="col-lg-7">
+    <!-- Loading -->
+    <div id="result-loading" style="display:none;" class="text-center py-5">
+      <div class="spinner mb-3"></div>
+      <p class="text-muted">AI is analysing your vehicle...</p>
+    </div>
+
+    <!-- Placeholder -->
+    <div id="result-placeholder" class="text-center py-5 text-muted">
+      <div style="font-size:4rem;">🤖</div>
+      <h5 class="mt-3">Upload a photo to get started</h5>
+      <p class="small">Our AI will identify issues and recommend the right services</p>
+    </div>
+
+    <!-- Results -->
+    <div id="result-content" style="display:none;">
+      <div class="result-card card">
+        <!-- Diagnosis -->
+        <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+          <h5 class="fw-bold mb-0" style="color:#1e1153;">Diagnosis</h5>
+          <div class="d-flex gap-2">
+            <span id="severity-badge" class="severity-unknown fw-bold">—</span>
+            <span id="urgency-badge" class="urgency-can_wait rounded-pill px-3 py-1 fw-bold small">—</span>
+          </div>
+        </div>
+        <p id="diagnosis-text" class="text-muted mb-4"></p>
+
+        <!-- Issues -->
+        <div id="issues-section" style="display:none;">
+          <h6 class="fw-bold mb-2" style="color:#1e1153;">🔎 Issues Found</h6>
+          <div id="issues-list" class="mb-4"></div>
+        </div>
+
+        <!-- Advice -->
+        <div id="advice-section" style="display:none;" class="mb-4 p-3 rounded-3"
+             style="background:#f4f3ff;">
+          <h6 class="fw-bold mb-1" style="color:#1e1153;">💡 Advice</h6>
+          <p id="advice-text" class="mb-0 text-muted small"></p>
+        </div>
+
+        <!-- Recommended Services -->
+        <div id="services-section" style="display:none;">
+          <h6 class="fw-bold mb-2" style="color:#1e1153;">🛠️ Recommended Services</h6>
+          <div id="services-list" class="mb-3"></div>
+        </div>
+
+        <!-- Mechanic Specializations -->
+        <div id="specs-section" style="display:none;">
+          <h6 class="fw-bold mb-2" style="color:#1e1153;">🧑‍🔧 Find a Mechanic With</h6>
+          <div id="specs-list" class="mb-4"></div>
+        </div>
+
+        <!-- CTA -->
+        <a href="{% url 'mechanics_list' %}" class="btn w-100 rounded-pill fw-bold py-2"
+           style="background:#11ba1f; color:white;">
+          📅 Book a Mechanic Now
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const CSRF = "{{ csrf_token }}";
+  let selectedFile = null;
+
+  function previewImage(input) {
+    if (input.files && input.files[0]) {
+      selectedFile = input.files[0];
+      const reader = new FileReader();
+      reader.onload = e => {
+        document.getElementById('preview').src = e.target.result;
+        document.getElementById('preview').style.display = 'block';
+        document.getElementById('upload-placeholder').style.display = 'none';
+        document.getElementById('analyze-btn').disabled = false;
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    document.getElementById('upload-zone').classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      const input = document.getElementById('image-input');
+      input.files = dt.files;
+      previewImage(input);
+    }
+  }
+
+  async function analyzeImage() {
+    if (!selectedFile) return;
+
+    document.getElementById('result-placeholder').style.display = 'none';
+    document.getElementById('result-content').style.display = 'none';
+    document.getElementById('result-loading').style.display = 'block';
+    document.getElementById('analyze-btn').disabled = true;
+
+    const formData = new FormData();
+    formData.append('image', selectedFile);
+
+    try {
+      const r = await fetch("{% url 'analyze_vehicle' %}", {
+        method: 'POST',
+        headers: { 'X-CSRFToken': CSRF },
+        body: formData,
+      });
+      const d = await r.json();
+      document.getElementById('result-loading').style.display = 'none';
+
+      if (d.error) {
+        document.getElementById('result-placeholder').style.display = 'block';
+        document.getElementById('result-placeholder').innerHTML =
+          `<div style="font-size:3rem;">⚠️</div><p class="text-danger mt-2">${d.error}</p>`;
+        return;
+      }
+
+      renderResult(d);
+    } catch(e) {
+      document.getElementById('result-loading').style.display = 'none';
+      document.getElementById('result-placeholder').style.display = 'block';
+      document.getElementById('result-placeholder').innerHTML =
+        '<div style="font-size:3rem;">⚠️</div><p class="text-danger mt-2">Analysis failed. Please try again.</p>';
+    }
+
+    document.getElementById('analyze-btn').disabled = false;
+  }
+
+  function renderResult(d) {
+    // Severity
+    const sev = d.severity || 'unknown';
+    const sevEl = document.getElementById('severity-badge');
+    sevEl.className = `severity-${sev} fw-bold`;
+    sevEl.textContent = sev.charAt(0).toUpperCase() + sev.slice(1);
+
+    // Urgency
+    const urg = d.urgency || 'unknown';
+    const urgEl = document.getElementById('urgency-badge');
+    urgEl.className = `urgency-${urg} rounded-pill px-3 py-1 fw-bold small`;
+    const urgLabels = { can_wait: '✅ Can Wait', book_soon: '🔔 Book Soon', urgent: '⚠️ Urgent', emergency: '🚨 Emergency' };
+    urgEl.textContent = urgLabels[urg] || urg;
+
+    // Diagnosis
+    document.getElementById('diagnosis-text').textContent = d.diagnosis || '—';
+
+    // Issues
+    if (d.issues && d.issues.length) {
+      document.getElementById('issues-section').style.display = 'block';
+      document.getElementById('issues-list').innerHTML =
+        d.issues.map(i => `<div class="issue-item">• ${i}</div>`).join('');
+    }
+
+    // Advice
+    if (d.advice) {
+      document.getElementById('advice-section').style.display = 'block';
+      document.getElementById('advice-text').textContent = d.advice;
+    }
+
+    // Services
+    if (d.recommended_services && d.recommended_services.length) {
+      document.getElementById('services-section').style.display = 'block';
+      document.getElementById('services-list').innerHTML =
+        d.recommended_services.map(s => `<span class="service-badge">${s}</span>`).join('');
+    }
+
+    // Specializations
+    if (d.mechanic_specializations && d.mechanic_specializations.length) {
+      document.getElementById('specs-section').style.display = 'block';
+      document.getElementById('specs-list').innerHTML =
+        d.mechanic_specializations.map(s => `<span class="spec-badge">🔧 ${s}</span>`).join('');
+    }
+
+    document.getElementById('result-content').style.display = 'block';
+  }
+</script>
+{% endblock %}
